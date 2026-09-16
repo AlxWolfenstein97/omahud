@@ -1,0 +1,104 @@
+# OmaHud
+
+**Omarchy themes your desktop. OmaHud retints MangoHud — colours only —
+so Goverlay (or your hand-tuned conf) keeps owning metrics, layout, and
+keybinds.**
+
+![OmaHud — MangoHud colour mockup](preview.png)
+
+The early “drop a full `mangohud.conf.tpl` into Omarchy’s themed templates”
+path worked like Catppuccin Mango packs: every theme switch replaced the whole
+HUD file and smashed people’s layouts. Fine as a theme-pack experiment; wrong
+once Style plugins got good. OmaHud is the other side of that idea.
+
+## Goals
+
+| Goal | What that means here |
+|------|----------------------|
+| Colours only | Rewrite existing `*_color` keys in `~/.config/MangoHud/MangoHud.conf`. Never invent `gpu_stats`, positions, or hotkeys. |
+| Goverlay stays useful | Build the metrics layout in Goverlay; OmaHud only repaints. Next Goverlay open reads the retinted conf. |
+| Style carousel | Mock HUD tiles from every `colors.toml` — faster than hopping themes and restarting vkcube / games. |
+| Theme-set sync | Hook keeps HUD colours with the desktop (same idea as OmaOBS / OmaCursor). |
+| Escape hatch | First apply snapshots prior colours; `omahud clear` puts them back. |
+
+Live vkcube / Goverlay cube is still great for verifying the *real* overlay;
+mockups are for picking a tint quickly in Style.
+
+## Install
+
+```sh
+omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
+```
+
+Or from a checkout:
+
+```sh
+~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/install.sh
+omarchy plugin enable io.github.alxwolfenstein97.omahud
+```
+
+**Needs (installer pulls when missing):**
+
+| Package | Why |
+|---------|-----|
+| `python-pillow` | Style → HUD Themes mockups |
+| `mangohud` | The overlay being retinted |
+
+If `MangoHud.conf` does not exist yet, set metrics once in **Goverlay** (or
+copy a conf), then Style → HUD Themes / `omahud sync`. Install removes any
+legacy full-file `theme-set.d/mangohud` hook so templates stop overwriting you.
+
+`omarchy pkg add` needs sudo — interactive install asks in-TTY; shell-service
+`--quiet` opens one floating terminal once when packages are missing.
+
+## How it works
+
+1. Style → **HUD Themes** warms PNG mockups, then `omahud-set <theme>` patches
+   colour keys in place.
+2. `~/.config/omarchy/hooks/theme-set.d/omahud` runs `omahud-sync` after every
+   desktop theme switch.
+3. Goverlay keeps writing layout/metrics into the same conf; the next sync or
+   Style pick puts Omarchy colours back on top.
+
+CLI:
+
+```sh
+omahud list
+omahud show tokyo-night
+omahud set tokyo-night      # pin HUD to that palette
+omahud sync                 # follow current Omarchy theme
+omahud clear                # restore pre-OmaHud colours
+omahud preview              # warm mockups
+omahud switcher             # image picker → slug on stdout
+```
+
+## Uninstall
+
+```sh
+~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/uninstall.sh
+omarchy plugin remove io.github.alxwolfenstein97.omahud
+# optional: omahud clear   # before remove, if you want old colours back
+```
+
+## Check
+
+```sh
+bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/check.sh
+```
+
+## Credits
+
+- Sibling Style plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
+  [OmaCursor](https://github.com/AlxWolfenstein97/omacursor),
+  [OmaBoot](https://github.com/AlxWolfenstein97/omaboot),
+  [OmaVT](https://github.com/AlxWolfenstein97/omavt),
+  [OmaTTY](https://github.com/AlxWolfenstein97/omatty),
+  [Chroma](https://github.com/AlxWolfenstein97/chroma).
+- [MangoHud](https://github.com/flightlessmango/MangoHud) +
+  [Goverlay](https://github.com/benjamimgois/goverlay) — metrics UI; we only
+  touch the paint.
+- [Omarchy](https://omarchy.org/) — Style menu + theme-set hooks.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

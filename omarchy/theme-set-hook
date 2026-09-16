@@ -1,0 +1,11 @@
+#!/bin/bash
+# omahud theme-set hook — retint MangoHud colours to match the desktop theme.
+# Layout / metrics / keybinds in MangoHud.conf are left alone.
+set -uo pipefail
+
+PLUGIN="${OMAHUD_PLUGIN_DIR:-$HOME/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud}"
+SYNC="$PLUGIN/bin/omahud-sync"
+
+[[ -x $SYNC ]] || exit 0
+"$SYNC" --quiet >/dev/null 2>&1 || true
+exit 0

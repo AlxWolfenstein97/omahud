@@ -16,7 +16,7 @@ once Style plugins got good. OmaHud is the other side of that idea.
 | Goal | What that means here |
 |------|----------------------|
 | Colours only | Rewrite existing `*_color` keys in `~/.config/MangoHud/MangoHud.conf`. Never invent `gpu_stats`, positions, or hotkeys. |
-| Goverlay stays useful | Build the metrics layout in Goverlay; OmaHud only repaints. Next Goverlay open reads the retinted conf. |
+| Goverlay stays useful | Build the metrics layout in Goverlay; OmaHud only repaints. By default it also retints Goverlay’s own `gameconfig/*/MangoHud.conf` so the colour pickers match (not stock MangoHud green). |
 | Style carousel | Mock HUD tiles from every `colors.toml` — faster than hopping themes and restarting vkcube / games. |
 | Theme-set sync | Hook keeps HUD colours with the desktop (same idea as OmaOBS / OmaCursor). |
 | Escape hatch | First apply snapshots prior colours; `omahud clear` puts them back. |
@@ -54,11 +54,25 @@ legacy full-file `theme-set.d/mangohud` hook so templates stop overwriting you.
 ## How it works
 
 1. Style → **HUD Themes** warms PNG mockups, then `omahud-set <theme>` patches
-   colour keys in place.
+   colour keys in place (live conf **and** Goverlay’s GUI copy by default).
 2. `~/.config/omarchy/hooks/theme-set.d/omahud` runs `omahud-sync` after every
    desktop theme switch.
-3. Goverlay keeps writing layout/metrics into the same conf; the next sync or
-   Style pick puts Omarchy colours back on top.
+3. Goverlay keeps writing layout/metrics into the same files. If you pick a
+   built-in colour preset (**MangoHud Stock**, **Simple White**, **Afterburner**,
+   **GOverlay**) and save, those colours land until the next sync / Style pick —
+   intentional: OmaHud is for matching Omarchy themes, not fighting hand-tuned
+   Goverlay paint. Layout/metrics from any preset stay; only `*_color` keys move.
+
+Catppuccin’s MangoHud pack is a full-file replace (layout + pastel colours) —
+same smash as the old themed `.tpl`. OmaHud keeps the split: your metrics, our
+tints.
+
+Disable Goverlay GUI sync if you only want `~/.config/MangoHud/MangoHud.conf`:
+
+```sh
+touch ~/.local/state/omarchy/omahud/no-goverlay-sync
+# or: OMAHUD_SYNC_GOVERLAY=0 omahud sync
+```
 
 CLI:
 

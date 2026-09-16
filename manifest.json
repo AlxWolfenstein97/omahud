@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.alxwolfenstein97.omahud",
   "name": "OmaHud",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "AlxWolfenstein97",
   "license": "MIT",
   "description": "Style menu picker that retints MangoHud from any Omarchy colors.toml without smashing your Goverlay layout or metrics. Theme-set sync keeps HUD colours with the desktop.",

@@ -33,6 +33,7 @@ MOCKUP_SIZE = (1536, 864)
 COLOR_KEYS_SINGLE = (
     "background_color",
     "text_color",
+    "text_outline_color",
     "gpu_color",
     "vram_color",
     "cpu_color",
@@ -45,11 +46,15 @@ COLOR_KEYS_SINGLE = (
     "network_color",
     "io_color",
     "gpu_fan_color",
+    "horizontal_separator_color",
 )
 COLOR_KEYS_TRIPLE = (
     "gpu_load_color",
     "cpu_load_color",
     "fps_color",
+    # Catppuccin-style valued form (Goverlay usually keeps fps_color_change as a
+    # bare flag + separate fps_color=… — we only rewrite when it has a value).
+    "fps_color_change",
 )
 COLOR_KEYS = COLOR_KEYS_SINGLE + COLOR_KEYS_TRIPLE
 
@@ -96,6 +101,12 @@ def paths() -> dict[str, Path]:
         "menu": h / ".config/omarchy/extensions/omarchy-menu.jsonc",
         "hooks": h / ".config/omarchy/hooks/theme-set.d",
         "current_theme_name": h / ".local/state/omarchy/current/theme.name",
+        "goverlay_gameconfig": Path(
+            os.environ.get(
+                "OMAHUD_GOVERLAY_GAMECONFIG",
+                h / ".local/share/goverlay/gameconfig",
+            )
+        ),
     }
 
 
@@ -229,6 +240,9 @@ def palette_from_theme(slug: str) -> dict[str, str]:
         "cpu_load_color": ",".join(strip_hex(c) for c in (green, yellow, red)),
         # fps_color is low→high (red, yellow, green) in typical Goverlay exports
         "fps_color": ",".join(strip_hex(c) for c in (red, yellow, green)),
+        "fps_color_change": ",".join(strip_hex(c) for c in (red, yellow, green)),
+        "text_outline_color": strip_hex(parse_hex(raw.get("darker_background", raw.get("dark_background", "")), "#11111b")),
+        "horizontal_separator_color": strip_hex(magenta),
         # mockup helpers (with #)
         "_bg": bg,
         "_fg": fg,
@@ -245,6 +259,36 @@ def palette_from_theme(slug: str) -> dict[str, str]:
 
 def mangohud_conf_path() -> Path:
     return paths()["mangohud"]
+
+
+def goverlay_sync_enabled() -> bool:
+    """Retint Goverlay's own MangoHud copies so the GUI colour pickers match.
+
+    Default on. Disable with OMAHUD_SYNC_GOVERLAY=0 or state file
+    ~/.local/state/omarchy/omahud/no-goverlay-sync.
+    """
+    env = os.environ.get("OMAHUD_SYNC_GOVERLAY", "").strip().lower()
+    if env in ("0", "false", "no", "off"):
+        return False
+    if env in ("1", "true", "yes", "on"):
+        return True
+    return not (paths()["state"] / "no-goverlay-sync").is_file()
+
+
+def mangohud_targets(*, include_goverlay: bool | None = None) -> list[Path]:
+    """Live HUD conf + optional Goverlay gameconfig copies."""
+    primary = mangohud_conf_path()
+    out: list[Path] = [primary]
+    if include_goverlay is None:
+        include_goverlay = goverlay_sync_enabled()
+    if not include_goverlay:
+        return out
+    root = paths()["goverlay_gameconfig"]
+    if root.is_dir():
+        for conf in sorted(root.glob("*/MangoHud.conf")):
+            if conf.resolve() != primary.resolve():
+                out.append(conf)
+    return out
 
 
 def backup_colors_once(text: str) -> None:
@@ -276,7 +320,6 @@ def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool
     backup_colors_once(original)
     out: list[str] = []
     replaced = 0
-    seen: set[str] = set()
     for line in original.splitlines():
         stripped = line.strip()
         if stripped and not stripped.startswith("#") and "=" in stripped:
@@ -286,7 +329,6 @@ def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool
                 indent = line[: len(line) - len(line.lstrip())]
                 out.append(f"{indent}{key}={colors[key]}")
                 replaced += 1
-                seen.add(key)
                 continue
         out.append(line)
     # Do not append missing colour keys — that would invent HUD chrome the user
@@ -303,17 +345,42 @@ def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool
 def apply_theme(slug: str, *, quiet: bool = False) -> int:
     slug = slugify(slug)
     colors = palette_from_theme(slug)
-    conf = mangohud_conf_path()
-    n, changed = patch_mangohud_colors(conf, colors)
+    targets = mangohud_targets()
+    primary = mangohud_conf_path()
+    if not primary.is_file():
+        raise FileNotFoundError(
+            f"no MangoHud.conf at {primary} — set up metrics in Goverlay (or write a "
+            "config) first; OmaHud only retints colours"
+        )
+
+    total = 0
+    any_changed = False
+    touched: list[str] = []
+    for conf in targets:
+        if not conf.is_file():
+            continue
+        n, changed = patch_mangohud_colors(conf, colors)
+        total += n
+        if changed:
+            any_changed = True
+            touched.append(str(conf))
+
     state = paths()["state"]
     state.mkdir(parents=True, exist_ok=True)
     atomic_write(state / "current", slug + "\n")
     if not quiet:
-        if changed:
-            note(f"retinted {n} colour key(s) in {conf} ← {pretty_name(slug)}")
-            note("layout / metrics / keybinds untouched — reopen Goverlay or the game HUD to see colours")
+        label = pretty_name(slug)
+        if any_changed:
+            note(f"retinted {total} colour key(s) ← {label}")
+            for path in touched:
+                note(f"  {path}")
+            if goverlay_sync_enabled() and any(
+                "goverlay" in p for p in touched
+            ):
+                note("Goverlay GUI copy updated — reopen Goverlay to see the pickers match")
+            note("layout / metrics / keybinds untouched")
         else:
-            note(f"already matching {pretty_name(slug)} ({n} colour key(s) present)")
+            note(f"already matching {label} ({total} colour key(s) across {len(targets)} file(s))")
     return 0
 
 
@@ -328,13 +395,22 @@ def restore_backup(*, quiet: bool = False) -> int:
             continue
         key, _, value = line.partition("=")
         restored[key.strip()] = value.strip()
-    conf = mangohud_conf_path()
-    n, changed = patch_mangohud_colors(conf, restored)
+    total = 0
+    any_changed = False
+    for conf in mangohud_targets():
+        if not conf.is_file():
+            continue
+        n, changed = patch_mangohud_colors(conf, restored)
+        total += n
+        any_changed = any_changed or changed
     current = paths()["state"] / "current"
     if current.is_file():
         current.unlink()
     if not quiet:
-        note(f"restored {n} colour key(s) from backup" + (" (changed)" if changed else ""))
+        note(
+            f"restored {total} colour key(s) from backup"
+            + (" (changed)" if any_changed else "")
+        )
     return 0
 
 

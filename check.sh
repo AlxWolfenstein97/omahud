@@ -9,6 +9,7 @@ export OMAHUD_HOME="$tmp"
 export OMAHUD_STATE_DIR="$tmp/state"
 export OMAHUD_CACHE_DIR="$tmp/cache"
 export OMAHUD_MANGOHUD_CONF="$tmp/MangoHud/MangoHud.conf"
+export OMAHUD_GOVERLAY_GAMECONFIG="$tmp/.local/share/goverlay/gameconfig"
 mkdir -p "$tmp/MangoHud" "$tmp/.config/omarchy/themes/fixture" "$tmp/state" "$tmp/cache"
 mkdir -p "$tmp/.config/omarchy/extensions"
 
@@ -26,6 +27,7 @@ magenta = "#ff00ff"
 EOF
 
 # layout-heavy conf — colours should change, metrics stay
+mkdir -p "$tmp/MangoHud" "$tmp/.local/share/goverlay/gameconfig/global"
 cat >"$tmp/MangoHud/MangoHud.conf" <<'EOF'
 legacy_layout=0
 background_alpha=0.6
@@ -43,6 +45,7 @@ fps_color=FF0000,FFFF00,00FF00
 frame_timing
 frametime_color=FFFFFF
 EOF
+cp "$tmp/MangoHud/MangoHud.conf" "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf"
 
 pass() { printf 'ok  %s\n' "$1"; }
 bad() { printf 'FAIL %s\n' "$1"; exit 1; }
@@ -55,6 +58,10 @@ grep -q 'gpu_stats' "$tmp/MangoHud/MangoHud.conf" && pass "metrics kept" || bad 
 grep -q 'toggle_hud=Shift_R+F12' "$tmp/MangoHud/MangoHud.conf" && pass "keybind kept" || bad "keybind kept"
 grep -q 'position=top-left' "$tmp/MangoHud/MangoHud.conf" && pass "position kept" || bad "position kept"
 grep -q 'gpu_color=00FF00' "$tmp/MangoHud/MangoHud.conf" && pass "gpu colour" || bad "gpu colour"
+grep -q 'gpu_color=00FF00' "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf" \
+  && pass "goverlay copy retint" || bad "goverlay copy retint"
+grep -q 'gpu_stats' "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf" \
+  && pass "goverlay metrics kept" || bad "goverlay metrics kept"
 
 "$here/bin/omahud" preview fixture >/dev/null
 [[ -f $tmp/cache/previews/fixture.png ]] && pass "preview png" || bad "preview png"

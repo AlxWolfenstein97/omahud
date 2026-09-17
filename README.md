@@ -186,17 +186,19 @@ omahud current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Menu, hook, and OmaHud cache/state gone. `MangoHud.conf` (and Goverlay copies) stay as last painted. Shared packages stay. |
-| `omahud clear` | Restores the colour snapshot from first apply. Run **before** uninstall if you still want that backup (uninstall clears state). |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Shared packages stay. Leaves a state tombstone so Service `--quiet` cannot resurrect the menu. |
+| `omahud clear` | Restores the colour snapshot from first apply. Uninstall does this automatically when the backup is present. |
 | `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
+
+Quiet Service install no longer re-pulls Pillow or opens floating sudo (deps are
+interactive-only), and skips shell menu refresh/rescan to avoid boot “strokes”.
 
 **Full wipe** — copy-paste to remove plugin wiring *and* the shared package this
 installer may have pulled (skip the `pkg drop` line if something else still
-needs Pillow). Run `omahud clear` first if you want stock/pre-OmaHud colours back.
+needs Pillow). Uninstall restores pre-OmaHud colours when the backup exists.
 MangoHud / Goverlay stay installed — we never pulled them:
 
 ```sh
-omahud clear                # optional — restore pre-OmaHud colours while backup exists
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/uninstall.sh
 omarchy plugin disable io.github.alxwolfenstein97.omahud
 omarchy plugin remove io.github.alxwolfenstein97.omahud

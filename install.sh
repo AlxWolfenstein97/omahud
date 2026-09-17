@@ -116,9 +116,26 @@ mkdir -p "$(dirname "$menu_lock")"
     old_sha=$(cat "$menu_sha" 2>/dev/null || true)
     if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
       printf '%s\n' "$new_sha" >"$menu_sha"
-      if (( ! quiet )) && command -v omarchy-shell >/dev/null 2>&1; then
-        omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
-        omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+      if command -v omarchy-shell >/dev/null 2>&1; then
+        # Debounce: parallel quiet Services all rewrite the menu; one refresh
+        # within 3s is enough (avoids stacked Hypr strokes). Interactive always
+        # refreshes + rescan so mid-session enable shows the new row.
+        stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
+        do_refresh=1
+        if (( quiet )) && [[ -f $stamp ]]; then
+          now=$(date +%s)
+          then=$(stat -c %Y "$stamp" 2>/dev/null || echo 0)
+          if (( now - then < 3 )); then
+            do_refresh=0
+          fi
+        fi
+        if (( do_refresh )); then
+          touch "$stamp"
+          omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
+          if (( ! quiet )); then
+            omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+          fi
+        fi
       fi
     fi
   fi

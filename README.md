@@ -21,8 +21,17 @@ once Style plugins got good. OmaHud is the other side of that idea.
 | Theme-set sync | Hook keeps HUD colours with the desktop (same idea as OmaOBS / OmaCursor). |
 | Escape hatch | First apply snapshots prior colours; `omahud clear` puts them back. |
 
-Live vkcube / Goverlay cube is still great for verifying the *real* overlay;
-mockups are for picking a tint quickly in Style.
+Live PasCube / Goverlay cube is still the ground truth for the *real* overlay;
+Style mockups are for picking a tint quickly. Real layout-faithful mockups come
+later — for now we keep a True Theme Vibe reference of a live shot:
+
+**Reference — your metrics layout on PasCube (middle-left, colours from theme):**
+
+![Real MangoHud on PasCube — middle-left layout](reference-mangohud-pascube.png)
+
+(`MANGOHUD_CONFIGFILE` + a copy of `MangoHud.conf` with `no_display` stripped —
+do **not** set bare `MANGOHUD_CONFIG=…` alone or MangoHud falls back to stock
+chrome and you get the default top-left HUD.)
 
 ## Install
 

@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omahud"
 HEX_RE = re.compile(r"^#?[0-9A-Fa-f]{6}$")
-MOCKUP_LAYOUT_VERSION = "1"
+MOCKUP_LAYOUT_VERSION = "2"
 MOCKUP_SIZE = (1536, 864)
 
 # Keys we may retint. Multi-value keys use comma-separated RRGGBB lists.
@@ -497,72 +497,114 @@ def bust_image_picker_cache(preview_root: Path) -> None:
                 path.unlink(missing_ok=True)
 
 
+def _rgb_strip(value: str) -> tuple[int, int, int]:
+    return hex_to_rgb("#" + value.lstrip("#"))
+
+
+def _triple_rgbs(value: str) -> tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]]:
+    parts = [p.strip() for p in value.split(",") if p.strip()]
+    while len(parts) < 3:
+        parts.append(parts[-1] if parts else "FFFFFF")
+    return _rgb_strip(parts[0]), _rgb_strip(parts[1]), _rgb_strip(parts[2])
+
+
 def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = MOCKUP_SIZE) -> Path:
-    """Fake in-game HUD strip — metrics chrome, not a live vkcube capture."""
+    """True Theme Vibe HUD — middle-left 3-col panel matching the PasCube reference.
+
+    Traces the user's Goverlay metrics silhouette (GPU/VRAM/CPU/RAM/engine/FPS +
+    frametime graph), not a live capture. Colours come from colors.toml via the
+    same MangoHud key map as apply_theme.
+    """
     w, h = size
-    bg = hex_to_rgb(palette["_bg"])
-    # Dim “game” field behind the HUD
-    field = tuple(max(0, c - 18) for c in bg)
+    # Neutral “game” viewport (PasCube-ish grey), so palette reads on the HUD only
+    field = (55, 55, 58)
+    floor = (48, 48, 50)
     img = Image.new("RGB", (w, h), field)
     draw = ImageDraw.Draw(img)
+    # floor plane + faint grid
+    horizon = int(h * 0.58)
+    draw.rectangle((0, horizon, w, h), fill=floor)
+    for i in range(0, w, 48):
+        draw.line((i, horizon, i + (i - w // 2) // 8, h), fill=(42, 42, 44))
+    for j in range(horizon, h, 36):
+        draw.line((0, j, w, j), fill=(42, 42, 44))
+    # simple cube stand-in (center)
+    cx, cy = w // 2, int(h * 0.48)
+    cube = [(cx - 90, cy), (cx, cy - 55), (cx + 90, cy), (cx, cy + 55)]
+    draw.polygon(cube, fill=(210, 210, 212), outline=(170, 170, 172))
+    draw.polygon(
+        [(cx - 90, cy), (cx, cy + 55), (cx, cy + 95), (cx - 90, cy + 40)],
+        fill=(150, 150, 152),
+    )
+    draw.polygon(
+        [(cx + 90, cy), (cx, cy + 55), (cx, cy + 95), (cx + 90, cy + 40)],
+        fill=(120, 120, 122),
+    )
+    title_font = try_ui_font(22)
+    draw.text((cx - 95, 36), "PasCube Benchmark", font=title_font, fill=(220, 220, 220))
 
-    # Subtle vignette grid so it reads as a 3D viewport, not a blank tile
-    grid = hex_to_rgb(palette.get("_accent", palette["_fg"]))
-    for x in range(0, w, 64):
-        draw.line((x, 0, x, h), fill=tuple(max(0, c // 5) for c in grid))
-    for y in range(0, h, 64):
-        draw.line((0, y, w, y), fill=tuple(max(0, c // 5) for c in grid))
+    text = _rgb_strip(palette["text_color"])
+    gpu = _rgb_strip(palette["gpu_color"])
+    cpu = _rgb_strip(palette["cpu_color"])
+    vram = _rgb_strip(palette["vram_color"])
+    ram = _rgb_strip(palette["ram_color"])
+    engine = _rgb_strip(palette["engine_color"])
+    ft = _rgb_strip(palette["frametime_color"])
+    fps_lo, fps_mid, fps_hi = _triple_rgbs(palette["fps_color"])
+    load_lo, load_mid, load_hi = _triple_rgbs(palette["gpu_load_color"])
 
-    panel_x, panel_y = 80, 120
-    panel_w, panel_h = 420, 520
-    panel_bg = hex_to_rgb("#" + palette["background_color"])
-    # alpha-ish by mixing with field
-    panel_fill = tuple(int(panel_bg[i] * 0.75 + field[i] * 0.25) for i in range(3))
-    draw.rounded_rectangle(
+    # Middle-left panel (reference: vertically centered, left edge)
+    panel_w, panel_h = 340, 300
+    panel_x = 28
+    panel_y = (h - panel_h) // 2
+    panel_bg = _rgb_strip(palette["background_color"])
+    panel_fill = tuple(int(panel_bg[i] * 0.55 + field[i] * 0.45) for i in range(3))
+    draw.rectangle(
         (panel_x, panel_y, panel_x + panel_w, panel_y + panel_h),
-        radius=8,
         fill=panel_fill,
     )
 
-    font = try_ui_font(28)
-    font_sm = try_ui_font(20)
-    text = hex_to_rgb("#" + palette["text_color"])
-    gpu = hex_to_rgb("#" + palette["gpu_color"])
-    cpu = hex_to_rgb("#" + palette["cpu_color"])
-    ram = hex_to_rgb("#" + palette["ram_color"])
-    fps_hi = hex_to_rgb(palette["_green"])
-    fps_mid = hex_to_rgb(palette["_yellow"])
-    fps_lo = hex_to_rgb(palette["_red"])
+    font = try_ui_font(20)
+    font_sm = try_ui_font(16)
+    col_label = panel_x + 14
+    col_a = panel_x + 100
+    col_b = panel_x + 210
+    y = panel_y + 14
+    row_h = 36
 
-    x = panel_x + 24
-    y = panel_y + 24
-    rows = [
-        ("GPU", "64%", "72°C", gpu),
-        ("VRAM", "3.2 GiB", "", hex_to_rgb("#" + palette["vram_color"])),
-        ("CPU", "41%", "58°C", cpu),
-        ("RAM", "12.4 GiB", "", ram),
-        ("FPS", "144", "6.9 ms", fps_hi),
+    rows: list[tuple[str, tuple[int, int, int], str, tuple[int, int, int], str, tuple[int, int, int]]] = [
+        ("GPU", gpu, "34%", load_mid, "42°C", text),
+        ("VRAM", vram, "1.6 GiB", text, "", text),
+        ("CPU", cpu, "5%", text, "43°C", text),
+        ("RAM", ram, "5.9 GiB", text, "", text),
+        ("VULKAN", engine, "60 FPS", fps_hi, "16.7 ms", text),
     ]
-    for label, a, b, color in rows:
-        draw.text((x, y), label, font=font_sm, fill=color)
-        draw.text((x + 110, y), a, font=font, fill=text)
+    for label, label_c, a, a_c, b, b_c in rows:
+        draw.text((col_label, y), label, font=font, fill=label_c)
+        draw.text((col_a, y), a, font=font, fill=a_c)
         if b:
-            draw.text((x + 260, y), b, font=font, fill=text)
-        y += 56
-        # load bar
-        bar_y = y - 12
-        draw.rectangle((x, bar_y, x + 360, bar_y + 6), fill=tuple(c // 4 for c in text))
-        draw.rectangle((x, bar_y, x + 220, bar_y + 6), fill=color)
-        y += 28
+            draw.text((col_b, y), b, font=font, fill=b_c)
+        y += row_h
 
-    # fps colour legend
-    draw.text((x, y + 8), "fps", font=font_sm, fill=text)
-    for i, col in enumerate((fps_lo, fps_mid, fps_hi)):
-        bx = x + 80 + i * 70
-        draw.rectangle((bx, y + 12, bx + 56, y + 28), fill=col)
+    # frametime graph (single bright line like a flat 16.7ms trace)
+    graph_top = y + 4
+    graph_bot = panel_y + panel_h - 36
+    draw.rectangle(
+        (panel_x + 12, graph_top, panel_x + panel_w - 12, graph_bot),
+        fill=tuple(max(0, c - 10) for c in panel_fill),
+    )
+    gy = (graph_top + graph_bot) // 2
+    draw.line((panel_x + 14, gy, panel_x + panel_w - 14, gy), fill=ft, width=2)
+
+    draw.text(
+        (panel_x + 14, graph_bot + 6),
+        "Frametime  min: 16.6ms, max: 16.8ms",
+        font=font_sm,
+        fill=text,
+    )
 
     badge = f"{palette['_name']} · MangoHud colours · layout yours"
-    draw.text((80, h - 48), badge, font=font_sm, fill=hex_to_rgb(palette["_fg"]))
+    draw.text((28, h - 40), badge, font=font_sm, fill=text)
 
     save_png_atomic(img, dest)
     return dest

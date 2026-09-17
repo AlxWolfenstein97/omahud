@@ -25,7 +25,7 @@ Live PasCube / Goverlay cube is still the ground truth for the *real* overlay;
 Style mockups are for picking a tint quickly. Real layout-faithful mockups come
 later — for now we keep a True Theme Vibe reference of a live shot:
 
-**Reference — live PasCube (middle-left metrics, MangoHud Stock colours):**
+**Reference — live PasCube (middle-left metrics, Hackerman colours):**
 
 | Real HUD (PasCube) | OmaHud mockup (same silhouette) |
 | --- | --- |
@@ -114,8 +114,8 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/check.sh
 ## Credits
 
 - **Layout reference:** [`reference-mangohud-pascube.png`](reference-mangohud-pascube.png)
-  — live `mangohud pascube` with the user’s middle-left metrics layout (MangoHud
-  Stock colours in this shot). Mockups trace that 3-col panel + frametime graph.
+  — live `mangohud pascube` with the user’s middle-left metrics layout
+  (**Hackerman** colours). Mockups trace that 3-col panel + frametime graph.
 - Sibling Style plugins: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
   [OmaCursor](https://github.com/AlxWolfenstein97/omacursor),
   [OmaBoot](https://github.com/AlxWolfenstein97/omaboot),

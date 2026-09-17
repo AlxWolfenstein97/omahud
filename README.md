@@ -17,7 +17,7 @@ once Style plugins got good. OmaHud is the other side of that idea.
 |------|----------------------|
 | Colours only | Rewrite existing `*_color` keys in `~/.config/MangoHud/MangoHud.conf`. Never invent `gpu_stats`, positions, or hotkeys. |
 | Goverlay stays useful | Build the metrics layout in Goverlay; OmaHud only repaints. By default it also retints Goverlay’s own `gameconfig/*/MangoHud.conf` so the colour pickers match (not stock MangoHud green). |
-| Style carousel | Mock HUD tiles from every `colors.toml` — faster than hopping themes and restarting vkcube / games. |
+| Style carousel | Mock HUD tiles from every `colors.toml` — faster than hopping themes and restarting vkcube / games. Panel sits inside the ~8% Style crop inset (same SAFE_X as OmaOBS / OmaTTY) so labels don’t get chopped. |
 | Theme-set sync | Hook keeps HUD colours with the desktop (same idea as OmaOBS / OmaCursor). |
 | Escape hatch | First apply snapshots prior colours; `omahud clear` puts them back. |
 

@@ -24,8 +24,12 @@ from PIL import Image, ImageDraw, ImageFont
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omahud"
 HEX_RE = re.compile(r"^#?[0-9A-Fa-f]{6}$")
-MOCKUP_LAYOUT_VERSION = "2"
+MOCKUP_LAYOUT_VERSION = "3"
 MOCKUP_SIZE = (1536, 864)
+# omarchy-menu-images serves 1536×864 then crops ~8% sides into the Style tile —
+# keep the HUD panel inside this inset or labels get chopped.
+SAFE_X = 120
+SAFE_Y = 56
 
 # Keys we may retint. Multi-value keys use comma-separated RRGGBB lists.
 # We only rewrite a key if it already exists in the user's conf — never inject
@@ -513,7 +517,8 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
 
     Traces the user's Goverlay metrics silhouette (GPU/VRAM/CPU/RAM/engine/FPS +
     frametime graph), not a live capture. Colours come from colors.toml via the
-    same MangoHud key map as apply_theme.
+    same MangoHud key map as apply_theme. Panel stays inside SAFE_X/SAFE_Y so the
+    Style carousel crop does not chop labels.
     """
     w, h = size
     # Neutral “game” viewport (PasCube-ish grey), so palette reads on the HUD only
@@ -541,7 +546,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         fill=(120, 120, 122),
     )
     title_font = try_ui_font(22)
-    draw.text((cx - 95, 36), "PasCube Benchmark", font=title_font, fill=(220, 220, 220))
+    draw.text((cx - 95, SAFE_Y), "PasCube Benchmark", font=title_font, fill=(220, 220, 220))
 
     text = _rgb_strip(palette["text_color"])
     gpu = _rgb_strip(palette["gpu_color"])
@@ -553,10 +558,12 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     fps_lo, fps_mid, fps_hi = _triple_rgbs(palette["fps_color"])
     load_lo, load_mid, load_hi = _triple_rgbs(palette["gpu_load_color"])
 
-    # Middle-left panel (reference: vertically centered, left edge)
+    # Middle-left panel inside carousel safe inset (not flush to the canvas edge)
     panel_w, panel_h = 340, 300
-    panel_x = 28
-    panel_y = (h - panel_h) // 2
+    panel_x = SAFE_X
+    panel_y = max(SAFE_Y + 24, (h - panel_h) // 2)
+    if panel_y + panel_h > h - SAFE_Y - 36:
+        panel_y = h - SAFE_Y - 36 - panel_h
     panel_bg = _rgb_strip(palette["background_color"])
     panel_fill = tuple(int(panel_bg[i] * 0.55 + field[i] * 0.45) for i in range(3))
     draw.rectangle(
@@ -604,7 +611,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     )
 
     badge = f"{palette['_name']} · MangoHud colours · layout yours"
-    draw.text((28, h - 40), badge, font=font_sm, fill=text)
+    draw.text((SAFE_X, h - SAFE_Y + 8), badge, font=font_sm, fill=text)
 
     save_png_atomic(img, dest)
     return dest

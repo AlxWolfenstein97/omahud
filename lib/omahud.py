@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omahud"
 HEX_RE = re.compile(r"^#?[0-9A-Fa-f]{6}$")
-MOCKUP_LAYOUT_VERSION = "6"
+MOCKUP_LAYOUT_VERSION = "7"
 MOCKUP_SIZE = (1536, 864)
 # omarchy-menu-images serves 1536×864 then crops ~8% sides into the Style tile —
 # keep the HUD panel inside this inset or labels get chopped.
@@ -35,10 +35,10 @@ SAFE_Y = 56
 MOCKUP_BG_ALPHA = 0.6
 MOCKUP_BG_ALPHA_LIGHT = 0.95
 MOCKUP_LIGHT_LUMA = 160.0
-# Pillow mockups lack MangoHud's AA + live outline; pull weak accents toward
-# black/white until they clear ~AA contrast on the panel (apply colours untouched).
+# Pillow mockups lack MangoHud's AA + live outline; on *light* panels only, pull
+# weak accents toward black until they clear ~AA contrast (apply colours untouched).
+# Dark panels keep the raw palette — boosting them washed muted themes louder.
 MOCKUP_MIN_CONTRAST = 4.5
-
 # Keys we may retint. Multi-value keys use comma-separated RRGGBB lists.
 # We only rewrite a key if it already exists in the user's conf — never inject
 # metrics / layout / keybinds.
@@ -536,18 +536,22 @@ def _blend(fg: tuple[int, int, int], bg: tuple[int, int, int], alpha: float) -> 
     return tuple(int(round(fg[i] * a + bg[i] * (1.0 - a))) for i in range(3))
 
 
-def _mockup_ink(fill: tuple[int, int, int], panel: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Darken/lighten a HUD colour until it reads on the mock panel.
+def _mockup_ink(
+    fill: tuple[int, int, int],
+    panel: tuple[int, int, int],
+    *,
+    light_panel: bool,
+) -> tuple[int, int, int]:
+    """Darken weak accents on light mock panels only.
 
-    Catppuccin Latte body text already clears AA; pastel GPU/VRAM/CPU labels do
-    not on cream. Live MangoHud stays on the raw palette — this is tile-only.
+    Latte pastels fail AA on cream; dark themes already read and must stay on
+    the raw palette or muted greens/reds get lifted toward neon.
     """
-    if _contrast_ratio(fill, panel) >= MOCKUP_MIN_CONTRAST:
+    if not light_panel or _contrast_ratio(fill, panel) >= MOCKUP_MIN_CONTRAST:
         return fill
-    target = (12, 12, 14) if _rel_luma(panel) >= 0.5 else (245, 245, 248)
+    target = (12, 12, 14)
     best = fill
     for step in range(1, 21):
-        # lerp fill → target (not the panel-alpha blend helper's fg-over-bg sense)
         t = step / 20.0
         cand = tuple(int(round(fill[i] * (1.0 - t) + target[i] * t)) for i in range(3))
         best = cand
@@ -576,16 +580,19 @@ def _draw_hud_text(
     fill: tuple[int, int, int],
     outline: tuple[int, int, int] | None = None,
     panel: tuple[int, int, int] | None = None,
+    heavy_outline: bool = False,
 ) -> None:
-    """Glyph + 1px outline so metrics stay readable like the live HUD."""
+    """Glyph + outline. Full 8-neighbour on light panels; cardinal-only on dark."""
     edge = outline if outline is not None else _outline_ink(fill, panel)
     x, y = xy
     if edge != fill:
-        for dx in (-1, 0, 1):
-            for dy in (-1, 0, 1):
-                if dx == 0 and dy == 0:
-                    continue
-                draw.text((x + dx, y + dy), text, font=font, fill=edge)
+        offsets = (
+            ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1))
+            if heavy_outline
+            else ((-1, 0), (1, 0), (0, -1), (0, 1))
+        )
+        for dx, dy in offsets:
+            draw.text((x + dx, y + dy), text, font=font, fill=edge)
     draw.text(xy, text, font=font, fill=fill)
 
 
@@ -603,7 +610,8 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     frametime graph), not a live capture. Colours come from colors.toml via the
     same MangoHud key map as apply_theme. Panel stays inside SAFE_X/SAFE_Y so the
     Style carousel crop does not chop labels. Light themes keep a near-opaque
-    panel; weak accents are contrast-boosted for the tile only (Latte pastels).
+    panel and contrast-boost weak accents for the tile only; dark themes keep
+    the raw palette with a lighter outline so they stay closer to live HUD.
     """
     w, h = size
     # Neutral “game” viewport (PasCube-ish grey), so palette reads on the HUD only
@@ -638,17 +646,18 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     alpha = MOCKUP_BG_ALPHA_LIGHT if light_panel else MOCKUP_BG_ALPHA
     panel_fill = _blend(panel_bg, field, alpha)
 
-    text = _mockup_ink(_rgb_strip(palette["text_color"]), panel_fill)
-    gpu = _mockup_ink(_rgb_strip(palette["gpu_color"]), panel_fill)
-    cpu = _mockup_ink(_rgb_strip(palette["cpu_color"]), panel_fill)
-    vram = _mockup_ink(_rgb_strip(palette["vram_color"]), panel_fill)
-    ram = _mockup_ink(_rgb_strip(palette["ram_color"]), panel_fill)
-    engine = _mockup_ink(_rgb_strip(palette["engine_color"]), panel_fill)
-    ft = _mockup_ink(_rgb_strip(palette["frametime_color"]), panel_fill)
-    fps_lo, fps_mid, fps_hi = (_mockup_ink(c, panel_fill) for c in _triple_rgbs(palette["fps_color"]))
-    load_lo, load_mid, load_hi = (
-        _mockup_ink(c, panel_fill) for c in _triple_rgbs(palette["gpu_load_color"])
-    )
+    def ink(c: tuple[int, int, int]) -> tuple[int, int, int]:
+        return _mockup_ink(c, panel_fill, light_panel=light_panel)
+
+    text = ink(_rgb_strip(palette["text_color"]))
+    gpu = ink(_rgb_strip(palette["gpu_color"]))
+    cpu = ink(_rgb_strip(palette["cpu_color"]))
+    vram = ink(_rgb_strip(palette["vram_color"]))
+    ram = ink(_rgb_strip(palette["ram_color"]))
+    engine = ink(_rgb_strip(palette["engine_color"]))
+    ft = ink(_rgb_strip(palette["frametime_color"]))
+    fps_lo, fps_mid, fps_hi = (ink(c) for c in _triple_rgbs(palette["fps_color"]))
+    load_lo, load_mid, load_hi = (ink(c) for c in _triple_rgbs(palette["gpu_load_color"]))
 
     # Middle-left panel inside carousel safe inset (not flush to the canvas edge)
     panel_w, panel_h = 340, 300
@@ -677,10 +686,16 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         ("VULKAN", engine, "60 FPS", fps_hi, "16.7 ms", text),
     ]
     for label, label_c, a, a_c, b, b_c in rows:
-        _draw_hud_text(draw, (col_label, y), label, font=font, fill=label_c, panel=panel_fill)
-        _draw_hud_text(draw, (col_a, y), a, font=font, fill=a_c, panel=panel_fill)
+        _draw_hud_text(
+            draw, (col_label, y), label, font=font, fill=label_c, panel=panel_fill, heavy_outline=light_panel
+        )
+        _draw_hud_text(
+            draw, (col_a, y), a, font=font, fill=a_c, panel=panel_fill, heavy_outline=light_panel
+        )
         if b:
-            _draw_hud_text(draw, (col_b, y), b, font=font, fill=b_c, panel=panel_fill)
+            _draw_hud_text(
+                draw, (col_b, y), b, font=font, fill=b_c, panel=panel_fill, heavy_outline=light_panel
+            )
         y += row_h
 
     # frametime graph (single bright line like a flat 16.7ms trace)
@@ -700,6 +715,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         font=font_sm,
         fill=text,
         panel=panel_fill,
+        heavy_outline=light_panel,
     )
 
     # Badge sits on the dark floor — always use light ink + dark outline.
@@ -711,6 +727,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         font=font_sm,
         fill=(230, 230, 232),
         outline=(20, 20, 22),
+        heavy_outline=False,
     )
 
     save_png_atomic(img, dest)

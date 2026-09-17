@@ -38,8 +38,8 @@ chmod 755 "$here"/bin/* "$here/omarchy/theme-set-hook" "$here/check.sh" \
 
 export OMAHUD_PLUGIN_DIR="$here"
 
-# Packages need sudo. Interactive install can ask in this TTY; Service --quiet
-# must not open floating sudo — deps are interactive-only.
+# Packages need sudo. Interactive install asks in this TTY; Service --quiet
+# opens one floating terminal once (pkgs-prompted) — not again every boot.
 pull_pkgs() {
   local -a missing=()
   local pkg
@@ -85,12 +85,9 @@ pull_pkgs() {
 # Pillow draws Style carousel mockups — install before warming previews.
 # Do NOT pull mangohud / goverlay (same idea as OmaOBS not pulling OBS): this
 # plugin is optional paint for people who already run the overlay.
-if (( quiet )); then
-  pacman -Q python-pillow &>/dev/null \
-    || warn "missing python-pillow — re-run install.sh interactively (or: omarchy pkg add python-pillow)"
-else
-  pull_pkgs python-pillow || true
-fi
+# Interactive: ask in this TTY. Quiet/Service: one floating terminal once
+# (pkgs-prompted), never again on later boots if dismissed. Still never pulls mangohud.
+pull_pkgs python-pillow || true
 if ! pacman -Q mangohud &>/dev/null; then
   note "mangohud not on the box — OmaHud is paint-only; sync no-ops until you already run the overlay"
 elif [[ ! -f $HOME/.config/MangoHud/MangoHud.conf ]]; then

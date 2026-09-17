@@ -31,7 +31,7 @@ marketplace notes live in [Chroma](https://github.com/AlxWolfenstein97/chroma).
 |------|----------------------|
 | Zero extra assets | No per-theme HUD screenshots. Colours come from `colors.toml` alone. |
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
-| Colours only | Rewrite existing `*_color` keys. Never invent `gpu_stats`, positions, or hotkeys. |
+| Colours only | Rewrite existing `*_color` keys (including load / FPS triples if you turned those on). Never invent metrics or hotkeys. |
 | Goverlay / traps | Not a how-to-HUD guide — skip colour pickers, know what we paint. See below. |
 | Live reload | Patch the conf; MangoHud picks it up mid-session. No game restart to judge a tint. |
 | Carousel-safe | Mockups are 1536×864 with ~8% side inset so the Style tile crop does not chop labels. |
@@ -58,7 +58,10 @@ keeps pace after that). Same idea as OmaOBS / OmaCursor / OmaBoot.
 - **Mockups** — middle-left 3-col metrics panel + frametime graph on a PasCube-ish
   field, coloured from that theme’s palette (carousel-safe inset).
 - **Colours-only patch** — existing `*_color` keys in the global conf (and
-  Goverlay’s copies by default). Layout stays yours — traps below.
+  Goverlay’s copies by default), including `gpu_load_color` / `cpu_load_color` /
+  `fps_color` when those lines are already there. You decide how much colour
+  lives in the HUD by what Goverlay (or the conf) enables; we only repaint keys
+  that exist. Layout stays yours — traps below.
 - **Live in-game retint** — MangoHud re-reads the conf; no game restart.
 - **theme-set hook** — `omarchy theme set …` keeps HUD colours in step.
 - **Escape hatches** — `omahud clear`, or a Goverlay colour preset (see traps).
@@ -83,7 +86,8 @@ you do **not** waste time or walk into OmaHud-specific traps:
 
 | Trap | Reality |
 |------|---------|
-| Fiddling Goverlay **colour** pickers every theme change | Pointless — OmaHud owns paint from `colors.toml`. Use Goverlay for metrics, graphs, position, keybinds. |
+| Fiddling Goverlay **colour** pickers every theme change | Pointless for day-to-day theme matching — OmaHud owns paint from `colors.toml`. Use Goverlay for metrics, graphs, position, keybinds, and which **load / FPS colour ramps** are even enabled. |
+| Expecting a flat one-colour HUD | If you turned on `gpu_load_change` / `cpu_load_change` / `fps_color_change` (or left a preset that did), we retint those green→yellow→red (and FPS low→high) triples too — so load / FPS still read as status, not one flat accent. Same keys land in Goverlay’s copies when you reopen the GUI. |
 | Expecting OmaHud to install or teach MangoHud | No. Bring your own overlay; we only retint an existing conf. |
 | Assuming every per-game conf gets painted | We touch `~/.config/MangoHud/MangoHud.conf` and, by default, Goverlay’s `gameconfig/*/MangoHud.conf` (so its GUI pickers match). Hand-rolled paths / launch-option confs **outside** that tree are on you. |
 | Saving a Goverlay colour preset then wondering why theme paint vanished | Intentional escape: Stock / Simple White / Afterburner / GOverlay puts non-theme colours back (layout kept). Next sync / Style pick restores Omarchy paint. Prefer `omahud clear` for the pre-OmaHud snapshot. |

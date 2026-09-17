@@ -24,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omahud"
 HEX_RE = re.compile(r"^#?[0-9A-Fa-f]{6}$")
-MOCKUP_LAYOUT_VERSION = "5"
+MOCKUP_LAYOUT_VERSION = "6"
 MOCKUP_SIZE = (1536, 864)
 # omarchy-menu-images serves 1536×864 then crops ~8% sides into the Style tile —
 # keep the HUD panel inside this inset or labels get chopped.
@@ -556,8 +556,14 @@ def _mockup_ink(fill: tuple[int, int, int], panel: tuple[int, int, int]) -> tupl
     return best
 
 
-def _outline_ink(fill: tuple[int, int, int]) -> tuple[int, int, int]:
-    """MangoHud-style edge: dark ink around light glyphs, light around dark."""
+def _outline_ink(fill: tuple[int, int, int], panel: tuple[int, int, int] | None = None) -> tuple[int, int, int]:
+    """Edge colour that thickens glyphs against the panel (not against the fill).
+
+    Light outline around Latte's dark ink washed #4c4f69 into grey on cream;
+    dark panels still get a light edge around neon labels.
+    """
+    if panel is not None:
+        return (16, 16, 18) if _rel_luma(panel) >= 0.5 else (245, 245, 248)
     return (16, 16, 18) if _luma(fill) >= 140 else (245, 245, 248)
 
 
@@ -569,9 +575,10 @@ def _draw_hud_text(
     font: ImageFont.ImageFont,
     fill: tuple[int, int, int],
     outline: tuple[int, int, int] | None = None,
+    panel: tuple[int, int, int] | None = None,
 ) -> None:
     """Glyph + 1px outline so metrics stay readable like the live HUD."""
-    edge = outline if outline is not None else _outline_ink(fill)
+    edge = outline if outline is not None else _outline_ink(fill, panel)
     x, y = xy
     if edge != fill:
         for dx in (-1, 0, 1):
@@ -670,10 +677,10 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         ("VULKAN", engine, "60 FPS", fps_hi, "16.7 ms", text),
     ]
     for label, label_c, a, a_c, b, b_c in rows:
-        _draw_hud_text(draw, (col_label, y), label, font=font, fill=label_c)
-        _draw_hud_text(draw, (col_a, y), a, font=font, fill=a_c)
+        _draw_hud_text(draw, (col_label, y), label, font=font, fill=label_c, panel=panel_fill)
+        _draw_hud_text(draw, (col_a, y), a, font=font, fill=a_c, panel=panel_fill)
         if b:
-            _draw_hud_text(draw, (col_b, y), b, font=font, fill=b_c)
+            _draw_hud_text(draw, (col_b, y), b, font=font, fill=b_c, panel=panel_fill)
         y += row_h
 
     # frametime graph (single bright line like a flat 16.7ms trace)
@@ -692,6 +699,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         "Frametime  min: 16.6ms, max: 16.8ms",
         font=font_sm,
         fill=text,
+        panel=panel_fill,
     )
 
     # Badge sits on the dark floor — always use light ink + dark outline.

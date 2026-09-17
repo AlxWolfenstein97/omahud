@@ -74,12 +74,14 @@ pull_pkgs() {
   return 1
 }
 
-# Pillow for Style mockups. mangohud is optional at install — apply warns if
-# there is no conf yet (Goverlay / hand config creates it).
+# Pillow draws Style carousel mockups — install before warming previews.
+# Do NOT pull mangohud / goverlay (same idea as OmaOBS not pulling OBS): this
+# plugin is optional paint for people who already run the overlay.
 pull_pkgs python-pillow || true
 if ! pacman -Q mangohud &>/dev/null; then
-  note "mangohud not installed — HUD retints apply once the package + conf exist"
-  pull_pkgs mangohud || true
+  warn "mangohud not installed — install it (and optionally goverlay) yourself; OmaHud only retints an existing conf"
+elif [[ ! -f $HOME/.config/MangoHud/MangoHud.conf ]]; then
+  warn "no ~/.config/MangoHud/MangoHud.conf yet — set metrics in Goverlay (or copy a conf), then omahud sync"
 fi
 
 # ------------------------------------------------------------------- theme hook

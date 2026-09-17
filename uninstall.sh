@@ -32,5 +32,4 @@ note "done — no omahud menu/hook left; MangoHud.conf untouched"
 note "optional: omahud clear   # restore pre-OmaHud colours (run before uninstall if you still want the backup)"
 note "plugin files remain at $here until you omit/remove the plugin"
 note "optional: omarchy pkg drop python-pillow  # if nothing else needs Pillow"
-note "optional: omarchy pkg drop mangohud       # if you no longer want the overlay"
 exit 0

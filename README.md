@@ -58,21 +58,50 @@ keeps pace after that). Same idea as OmaOBS / OmaCursor / OmaBoot.
 - **Mockups** — middle-left 3-col metrics panel + frametime graph on a PasCube-ish
   field, coloured from that theme’s palette (carousel-safe inset).
 - **Colours-only patch** — existing `*_color` keys in
-  `~/.config/MangoHud/MangoHud.conf` (and Goverlay `gameconfig/*/MangoHud.conf`
-  by default). Layout, metrics, and keybinds stay yours.
-- **Goverlay still owns the HUD shape** — turn metrics on/off, rearrange columns,
-  FPS limits, keybinds, and graphs there. OmaHud never invents those lines; it
-  only repaints colour keys that already exist. First-time setup: build the
-  layout once in Goverlay, then Style → HUD Themes / `omahud sync`.
+  `~/.config/MangoHud/MangoHud.conf` (and Goverlay’s copies by default). Layout,
+  metrics, and keybinds stay yours — see **Goverlay** below.
 - **Live in-game retint** — MangoHud re-reads the conf; no game restart.
 - **theme-set hook** — `omarchy theme set …` keeps HUD colours in step.
-- **Escape hatches** — `omahud clear` restores the snapshot from first apply; or
-  pick a built-in Goverlay colour preset (**MangoHud Stock**, **Simple White**,
-  **Afterburner**, **GOverlay**) and save to put non-theme paint back until the
-  next sync / Style pick.
+- **Escape hatches** — `omahud clear`, or a Goverlay colour preset (details below).
 - **Stable Style order** — install normalises extender blocks under a shared
   flock (`Cursors` → `OBS` → `Boot` → `VT` → `TTY` → `HUD`) so quiet / itemised
   enables don’t race or shuffle the menu.
+
+## Goverlay: shape the HUD, OmaHud brings the paint
+
+Editing `MangoHud.conf` by hand is how you go insane. Most people should not.
+**[Goverlay](https://github.com/benjamimgois/goverlay)** is the helper UI for the
+overlay: metrics on/off, columns, graphs, FPS limits, keybinds, position. OmaHud
+assumes that workflow and refuses to invent those lines.
+
+**Recommended first run**
+
+1. Open Goverlay. Grab a **standard colour preset** you like as a starting point
+   (**MangoHud Stock**, **Simple White**, **Afterburner**, or **GOverlay**) —
+   just so the conf exists and the pickers are not empty.
+2. Add what you need: GPU / CPU / VRAM / RAM / FPS / frametime, wherever you want
+   the panel, hotkeys, limits. Save. That shape is *yours*.
+3. Style → **HUD Themes** (or `omahud sync`) — OmaHud dumps the Omarchy paint
+   bucket on the colour keys only. Metrics layout stays exactly as you left it.
+4. Change desktop theme mid-match whenever you want; the overlay retints live.
+
+**Where Goverlay still has a place**
+
+| You want… | Use… |
+|-----------|------|
+| More / fewer metrics, graphs, position, keybinds | Goverlay (or hand-edit the conf) |
+| HUD colours that match the Omarchy theme | Style → HUD Themes / `omahud sync` / theme-set |
+| Step off theme paint without uninstalling | Goverlay colour preset → Save (layout kept) |
+| Exact colours from before the first OmaHud apply | `omahud clear` |
+
+OmaHud also retints Goverlay’s own `gameconfig/*/MangoHud.conf` copies by
+default, so the colour pickers in the GUI show the Omarchy tint instead of stock
+green. Opt out with `touch ~/.local/state/omarchy/omahud/no-goverlay-sync` (or
+`OMAHUD_SYNC_GOVERLAY=0`) if you only want `~/.config/MangoHud/MangoHud.conf`.
+
+Hand-editing the conf is still fine if you prefer it — OmaHud only touches
+`*_color` keys that already exist either way. Goverlay is just the sane path for
+everyone who does not want to memorise MangoHud’s key soup.
 
 ## Mockups: True Theme Vibe (PasCube silhouette)
 
@@ -127,8 +156,8 @@ siblings: interactive install asks in-TTY; shell-service `--quiet` (itemised /
 marketplace enable) opens one floating terminal once when packages are missing,
 then continues. Menu write is flock’d with the other extenders.
 
-If `MangoHud.conf` does not exist yet, set metrics once in **Goverlay** (or copy
-a conf), then Style → HUD Themes / `omahud sync`. Install removes any legacy
+If `MangoHud.conf` does not exist yet, do the **Goverlay** first-run above (or
+copy a conf), then Style → HUD Themes / `omahud sync`. Install removes any legacy
 full-file `theme-set.d/mangohud` hook so templates stop overwriting you.
 
 ## How it works
@@ -139,24 +168,11 @@ full-file `theme-set.d/mangohud` hook so templates stop overwriting you.
    patches them in place (live conf **and** Goverlay’s GUI copies by default).
 3. `~/.config/omarchy/hooks/theme-set.d/omahud` runs `omahud-sync` after every
    desktop theme change.
-4. **Goverlay keeps the job it is good at.** Layout, which metrics show, graphs,
-   and keybinds are still edited there (or by hand in the conf). OmaHud only
-   rewrites `*_color` keys. If you open Goverlay and save a built-in colour
-   preset (**MangoHud Stock**, **Simple White**, **Afterburner**, **GOverlay**),
-   those colours land on the HUD — a deliberate way to step off theme paint
-   without uninstalling. The next `omahud sync` / Style → HUD Themes / desktop
-   theme flip puts Omarchy colours back. Layout/metrics from any preset stay.
 
-Catppuccin’s MangoHud pack is a full-file replace (layout + pastel colours) —
-same smash as the old themed `.tpl`. OmaHud keeps the split: your metrics, our
-tints.
-
-Disable Goverlay GUI sync if you only want `~/.config/MangoHud/MangoHud.conf`:
-
-```sh
-touch ~/.local/state/omarchy/omahud/no-goverlay-sync
-# or: OMAHUD_SYNC_GOVERLAY=0 omahud sync
-```
+Shape stays with Goverlay (or your hand-tuned conf); paint stays with OmaHud —
+see **Goverlay: shape the HUD** above. Catppuccin’s MangoHud pack is still a
+full-file replace (layout + pastel colours), same smash as the old themed `.tpl`.
+OmaHud keeps the split.
 
 CLI:
 
@@ -196,13 +212,13 @@ omarchy pkg drop mangohud
 
 ## Limits, honestly
 
-- **No conf yet** — if `MangoHud.conf` is missing, set metrics once in Goverlay
+- **No conf yet** — if `MangoHud.conf` is missing, do the Goverlay first-run
   (or copy a conf) before Style → HUD Themes / `omahud sync` has somewhere to
   paint.
 - **Goverlay colour presets** — saving Stock / Simple White / Afterburner /
   GOverlay puts non-theme colours back on purpose (layout untouched). Next sync
-  or Style pick restores Omarchy paint. Prefer `omahud clear` if you want the
-  exact pre-OmaHud snapshot from first apply.
+  or Style pick restores Omarchy paint. Prefer `omahud clear` for the exact
+  pre-OmaHud snapshot from first apply. See the **Goverlay** section.
 - **Goverlay’s own chrome** — the Goverlay *app* UI is not themed (same stop-line
   as Chroma leftovers). Only MangoHud conf colour keys move.
 - **Mockups ≠ live layout** — tiles trace a PasCube middle-left silhouette, not

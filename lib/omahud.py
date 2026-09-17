@@ -24,12 +24,17 @@ from PIL import Image, ImageDraw, ImageFont
 
 PLUGIN_ID = "io.github.alxwolfenstein97.omahud"
 HEX_RE = re.compile(r"^#?[0-9A-Fa-f]{6}$")
-MOCKUP_LAYOUT_VERSION = "3"
+MOCKUP_LAYOUT_VERSION = "4"
 MOCKUP_SIZE = (1536, 864)
 # omarchy-menu-images serves 1536×864 then crops ~8% sides into the Style tile —
 # keep the HUD panel inside this inset or labels get chopped.
 SAFE_X = 120
 SAFE_Y = 56
+# Match Goverlay's default background_alpha. Light themes keep more of the theme
+# panel so dark ink stays readable (flat 0.55·bg+0.45·dark-field muddies Latte).
+MOCKUP_BG_ALPHA = 0.6
+MOCKUP_BG_ALPHA_LIGHT = 0.88
+MOCKUP_LIGHT_LUMA = 160.0
 
 # Keys we may retint. Multi-value keys use comma-separated RRGGBB lists.
 # We only rewrite a key if it already exists in the user's conf — never inject
@@ -505,6 +510,38 @@ def _rgb_strip(value: str) -> tuple[int, int, int]:
     return hex_to_rgb("#" + value.lstrip("#"))
 
 
+def _luma(rgb: tuple[int, int, int]) -> float:
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]
+
+
+def _blend(fg: tuple[int, int, int], bg: tuple[int, int, int], alpha: float) -> tuple[int, int, int]:
+    a = max(0.0, min(1.0, alpha))
+    return tuple(int(round(fg[i] * a + bg[i] * (1.0 - a))) for i in range(3))
+
+
+def _outline_ink(fill: tuple[int, int, int]) -> tuple[int, int, int]:
+    """MangoHud-style edge: dark ink around light glyphs, light around dark."""
+    return (16, 16, 18) if _luma(fill) >= 140 else (245, 245, 248)
+
+
+def _draw_hud_text(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[int, int],
+    text: str,
+    *,
+    font: ImageFont.ImageFont,
+    fill: tuple[int, int, int],
+    outline: tuple[int, int, int] | None = None,
+) -> None:
+    """Glyph + 1px outline so metrics stay readable like the live HUD."""
+    edge = outline if outline is not None else _outline_ink(fill)
+    x, y = xy
+    if edge != fill:
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+            draw.text((x + dx, y + dy), text, font=font, fill=edge)
+    draw.text(xy, text, font=font, fill=fill)
+
+
 def _triple_rgbs(value: str) -> tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int, int]]:
     parts = [p.strip() for p in value.split(",") if p.strip()]
     while len(parts) < 3:
@@ -518,7 +555,9 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     Traces the user's Goverlay metrics silhouette (GPU/VRAM/CPU/RAM/engine/FPS +
     frametime graph), not a live capture. Colours come from colors.toml via the
     same MangoHud key map as apply_theme. Panel stays inside SAFE_X/SAFE_Y so the
-    Style carousel crop does not chop labels.
+    Style carousel crop does not chop labels. Light themes keep a near-opaque
+    panel + outlined glyphs so Latte-style dark ink does not vanish into the
+    dark PasCube field.
     """
     w, h = size
     # Neutral “game” viewport (PasCube-ish grey), so palette reads on the HUD only
@@ -565,7 +604,9 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     if panel_y + panel_h > h - SAFE_Y - 36:
         panel_y = h - SAFE_Y - 36 - panel_h
     panel_bg = _rgb_strip(palette["background_color"])
-    panel_fill = tuple(int(panel_bg[i] * 0.55 + field[i] * 0.45) for i in range(3))
+    light_panel = _luma(panel_bg) >= MOCKUP_LIGHT_LUMA
+    alpha = MOCKUP_BG_ALPHA_LIGHT if light_panel else MOCKUP_BG_ALPHA
+    panel_fill = _blend(panel_bg, field, alpha)
     draw.rectangle(
         (panel_x, panel_y, panel_x + panel_w, panel_y + panel_h),
         fill=panel_fill,
@@ -587,10 +628,10 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
         ("VULKAN", engine, "60 FPS", fps_hi, "16.7 ms", text),
     ]
     for label, label_c, a, a_c, b, b_c in rows:
-        draw.text((col_label, y), label, font=font, fill=label_c)
-        draw.text((col_a, y), a, font=font, fill=a_c)
+        _draw_hud_text(draw, (col_label, y), label, font=font, fill=label_c)
+        _draw_hud_text(draw, (col_a, y), a, font=font, fill=a_c)
         if b:
-            draw.text((col_b, y), b, font=font, fill=b_c)
+            _draw_hud_text(draw, (col_b, y), b, font=font, fill=b_c)
         y += row_h
 
     # frametime graph (single bright line like a flat 16.7ms trace)
@@ -603,15 +644,24 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     gy = (graph_top + graph_bot) // 2
     draw.line((panel_x + 14, gy, panel_x + panel_w - 14, gy), fill=ft, width=2)
 
-    draw.text(
+    _draw_hud_text(
+        draw,
         (panel_x + 14, graph_bot + 6),
         "Frametime  min: 16.6ms, max: 16.8ms",
         font=font_sm,
         fill=text,
     )
 
+    # Badge sits on the dark floor — always use light ink + dark outline.
     badge = f"{palette['_name']} · MangoHud colours · layout yours"
-    draw.text((SAFE_X, h - SAFE_Y + 8), badge, font=font_sm, fill=text)
+    _draw_hud_text(
+        draw,
+        (SAFE_X, h - SAFE_Y + 8),
+        badge,
+        font=font_sm,
+        fill=(230, 230, 232),
+        outline=(20, 20, 22),
+    )
 
     save_png_atomic(img, dest)
     return dest

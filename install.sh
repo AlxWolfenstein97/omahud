@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# OmaHud installer. Safe to re-run: rewrites menu + theme-set hook.
+# OmaHud installer. Safe to re-run: theme-set hook always; menu written once
+# (quiet skips rewrite when // omahud:start markers already exist).
 # Does NOT replace MangoHud.conf — only colour keys on sync/set.
 #
 # Flags:
@@ -101,36 +102,42 @@ install -m 755 "$here/omarchy/theme-set-hook" "$hooks/omahud"
 note "hook: $hooks/omahud"
 
 # ------------------------------------------------------------------------ menu
+# Interactive: always install-menu + normalize. Quiet: only if our markers are
+# absent — do not rewrite/normalize omarchy-menu.jsonc on every shell start.
 menu_lock="$HOME/.local/state/omarchy/style-extenders/menu.lock"
 menu_sha="$HOME/.local/state/omarchy/style-extenders/menu.sha"
 menu_file="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
 mkdir -p "$(dirname "$menu_lock")"
 (
   flock 9
-  "$here/bin/omahud" install-menu
-  if [[ -f $menu_file ]]; then
-    new_sha=$(sha256sum "$menu_file" 2>/dev/null | awk '{print $1}')
-    old_sha=$(cat "$menu_sha" 2>/dev/null || true)
-    if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
-      printf '%s\n' "$new_sha" >"$menu_sha"
-      if command -v omarchy-shell >/dev/null 2>&1; then
-        # Debounce: parallel quiet Services all rewrite the menu; one refresh
-        # within 3s is enough (avoids stacked Hypr strokes). Interactive always
-        # refreshes + rescan so mid-session enable shows the new row.
-        stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
-        do_refresh=1
-        if (( quiet )) && [[ -f $stamp ]]; then
-          now=$(date +%s)
-          then=$(stat -c %Y "$stamp" 2>/dev/null || echo 0)
-          if (( now - then < 3 )); then
-            do_refresh=0
+  write_menu=1
+  if (( quiet )) && [[ -f $menu_file ]] && grep -qF '// omahud:start' "$menu_file"; then
+    write_menu=0
+  fi
+  if (( write_menu )); then
+    "$here/bin/omahud" install-menu
+    if [[ -f $menu_file ]]; then
+      new_sha=$(sha256sum "$menu_file" 2>/dev/null | awk '{print $1}')
+      old_sha=$(cat "$menu_sha" 2>/dev/null || true)
+      if [[ -n $new_sha && $new_sha != "$old_sha" ]]; then
+        printf '%s\n' "$new_sha" >"$menu_sha"
+        if command -v omarchy-shell >/dev/null 2>&1; then
+          # Debounce refresh only when the menu was actually written.
+          stamp="$HOME/.local/state/omarchy/style-extenders/menu.refresh"
+          do_refresh=1
+          if (( quiet )) && [[ -f $stamp ]]; then
+            now=$(date +%s)
+            then=$(stat -c %Y "$stamp" 2>/dev/null || echo 0)
+            if (( now - then < 3 )); then
+              do_refresh=0
+            fi
           fi
-        fi
-        if (( do_refresh )); then
-          touch "$stamp"
-          omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
-          if (( ! quiet )); then
-            omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+          if (( do_refresh )); then
+            touch "$stamp"
+            omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
+            if (( ! quiet )); then
+              omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
+            fi
           fi
         fi
       fi

@@ -186,12 +186,12 @@ omahud current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Shared packages stay. Leaves a state tombstone so Service `--quiet` cannot resurrect the menu. |
-| `omahud clear` | Restores the colour snapshot from first apply. Uninstall does this automatically when the backup is present. |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Shared packages stay. Leaves a state tombstone so Service `--quiet` cannot resurrect the menu. Refresh + `rescanPlugins` so the shell drops the row. |
+| `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall does this automatically when the backup is present. No-op when bak already matches the conf. |
 | `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
 
-Quiet Service install no longer re-pulls Pillow or opens floating sudo (deps are
-interactive-only), and skips shell menu refresh/rescan to avoid boot “strokes”.
+Quiet Service install: one-shot package prompt, theme-set hook kept, menu written
+only if `// omahud:start` markers are missing (no rewrite every boot).
 
 **Full wipe** — copy-paste to remove plugin wiring *and* the shared package this
 installer may have pulled (skip the `pkg drop` line if something else still
@@ -209,6 +209,9 @@ omarchy pkg drop python-pillow
 
 - **No conf yet** — we never pull MangoHud; sync is a no-op until
   `~/.config/MangoHud/MangoHud.conf` exists.
+- **Uninstall / clear** — restores `colors.bak` (snapshot taken once before the
+  first retint). If bak was never written (no colour keys yet, or never applied),
+  themed paint stays after uninstall.
 - **Not a MangoHud howto** — 32-bit libs, Steam / Lutris / gamescope / gamemode
   launch chains, etc. are assumed knowledge. See **Goverlay / MangoHud: traps**.
 - **Colour pickers in Goverlay** — don’t use them for theme matching; saving a

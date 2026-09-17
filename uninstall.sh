@@ -36,6 +36,7 @@ touch "$state/uninstalled"
 note "cleared state/cache (tombstone left so quiet install cannot resurrect)"
 
 omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
+omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 
 if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "$plugin_id" >/dev/null 2>&1 || true
@@ -44,4 +45,5 @@ fi
 note "done — no omahud menu/hook left; colour backup restored when present"
 note "plugin files remain at $here until you omit/remove the plugin"
 note "optional: omarchy pkg drop python-pillow  # if nothing else needs Pillow"
+note "if colours still look themed: no pre-OmaHud colors.bak existed (paint stays)"
 exit 0

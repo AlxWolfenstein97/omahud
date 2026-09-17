@@ -79,9 +79,9 @@ pull_pkgs() {
 # plugin is optional paint for people who already run the overlay.
 pull_pkgs python-pillow || true
 if ! pacman -Q mangohud &>/dev/null; then
-  warn "mangohud not installed — install it (and optionally goverlay) yourself; OmaHud only retints an existing conf"
+  note "mangohud not on the box — OmaHud is paint-only; sync no-ops until you already run the overlay"
 elif [[ ! -f $HOME/.config/MangoHud/MangoHud.conf ]]; then
-  warn "no ~/.config/MangoHud/MangoHud.conf yet — set metrics in Goverlay (or copy a conf), then omahud sync"
+  note "no MangoHud.conf yet — sync no-ops until one exists"
 fi
 
 # ------------------------------------------------------------------- theme hook

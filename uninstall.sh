@@ -29,13 +29,13 @@ offer_pkg_drop() {
   {
     printf '%s\n' '#!/usr/bin/env bash' 'set -uo pipefail'
     printf '%s\n' "printf '%s\n' 'OmaHud — uninstall'"
+    printf '%s\n' "printf '%s\n' 'io.github.alxwolfenstein97.omahud'"
+    printf '%s\n' "printf '%s\n' 'Style → HUD Themes — MangoHud colour retints'"
     printf '%s\n' "printf '%s\n' '────────────────────────────────'"
-    printf '%s\n' "printf '%s\n' 'Optional — drop shared packages only if nothing else needs them:'"
+    printf '%s\n' "printf '%s\n' 'Optional — packages OmaHud may have pulled (only if nothing else needs them):'"
     for pkg in "${have[@]}"; do
       case $pkg in
-        python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'Style carousel mockups'" ;;
-        python-numpy) printf '%s\n' "printf '  • %s — %s\n' 'python-numpy' 'Adwaita cursor remaps'" ;;
-        adw-gtk-theme) printf '%s\n' "printf '  • %s — %s\n' 'adw-gtk-theme' 'GTK theme Chroma paints'" ;;
+        python-pillow) printf '%s\n' "printf '  • %s — %s\n' 'python-pillow' 'was used to draw HUD Themes carousel mockups'" ;;
         *) printf '%s\n' "printf '  • %s\n' $(printf %q "$pkg")" ;;
       esac
     done
@@ -49,12 +49,13 @@ offer_pkg_drop() {
   } >"$script"
   chmod 755 "$script"
   if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
-    note "optional package drop — opening floating terminal"
+    note "OmaHud optional package drop — opening floating terminal"
     omarchy-launch-floating-terminal-with-presentation "bash $(printf %q "$script")" >/dev/null 2>&1 &
   else
     note "optional: omarchy pkg drop $list"
   fi
 }
+
 
 
 export OMAHUD_PLUGIN_DIR="$here"

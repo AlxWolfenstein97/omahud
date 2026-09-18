@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
-# Clean-slate: menu, theme-set hook, cache/state. Restores MangoHud colour
-# backup via `omahud clear` while colors.bak still exists, then wipes state.
+# Menu, theme-set hook, cache/state. Restores MangoHud colour backup via
+# `omahud clear` while colors.bak still exists. Optional floating terminal for
+# shared package drop. Hardened contrast / goverlay sync behaviour is kept —
+# uninstall does not touch layout or metrics beyond colour restore.
 #
 set -euo pipefail
 
@@ -14,9 +16,35 @@ menu_lock="$HOME/.local/state/omarchy/style-extenders/menu.lock"
 
 note() { printf 'omahud: %s\n' "$1"; }
 
+offer_pkg_drop() {
+  local -a have=()
+  local pkg
+  for pkg in "$@"; do
+    pacman -Q "$pkg" &>/dev/null && have+=("$pkg")
+  done
+  ((${#have[@]})) || return 0
+  local list="${have[*]}"
+  local cmd="omarchy pkg drop $list"
+  if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
+    note "optional package drop — opening floating terminal"
+    omarchy-launch-floating-terminal-with-presentation \
+      "bash -lc $(printf %q "read -r -p \"Drop $list? [y/N] \" a; case \$a in [yY]|[yY][eE][sS]) $cmd ;; *) echo skipped ;; esac")" \
+      >/dev/null 2>&1 &
+  else
+    note "optional: $cmd"
+  fi
+}
+
 export OMAHUD_PLUGIN_DIR="$here"
 
-# Restore pre-OmaHud colours while the backup still exists.
+# Tombstone + disable first so Service --quiet cannot resurrect the Style row.
+mkdir -p "$state"
+touch "$state/uninstalled"
+if command -v omarchy >/dev/null 2>&1; then
+  omarchy plugin disable "$plugin_id" >/dev/null 2>&1 || true
+fi
+
+# Restore pre-OmaHud colours while the backup still exists (before state wipe).
 if [[ -f $state/colors.bak ]]; then
   "$here/bin/omahud" clear --quiet 2>/dev/null || true
   note "restored MangoHud colours from backup"
@@ -30,20 +58,17 @@ mkdir -p "$(dirname "$menu_lock")"
 rm -f "$hooks/omahud"
 note "removed theme-set hook"
 
-rm -rf "$state" "$cache"
-mkdir -p "$state"
+rm -rf "$cache"
+find "$state" -mindepth 1 ! -name uninstalled -delete 2>/dev/null || true
 touch "$state/uninstalled"
 note "cleared state/cache (tombstone left so quiet install cannot resurrect)"
 
 omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 
-if command -v omarchy >/dev/null 2>&1; then
-  omarchy plugin disable "$plugin_id" >/dev/null 2>&1 || true
-fi
+offer_pkg_drop python-pillow
 
 note "done — no omahud menu/hook left; colour backup restored when present"
 note "plugin files remain at $here until you omit/remove the plugin"
-note "optional: omarchy pkg drop python-pillow  # if nothing else needs Pillow"
 note "if colours still look themed: no pre-OmaHud colors.bak existed (paint stays)"
 exit 0

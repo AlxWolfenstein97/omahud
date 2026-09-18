@@ -186,23 +186,21 @@ omahud current
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Shared packages stay. Leaves a state tombstone so Service `--quiet` cannot resurrect the menu. Refresh + `rescanPlugins` so the shell drops the row. |
-| `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall does this automatically when the backup is present. No-op when bak already matches the conf. |
-| `omarchy pkg drop python-pillow` | Optional. Only if nothing else on the machine needs Pillow. |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional floating terminal (y/N) for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
+| `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall does this automatically when the backup is present. |
+| `omarchy pkg drop python-pillow` | Optional. Only if nothing else needs Pillow. Uninstall may open a floating terminal for this. |
 
 Quiet Service install: one-shot package prompt, theme-set hook kept, menu written
-only if `// omahud:start` markers are missing (no rewrite every boot).
+only if `// omahud:start` markers are missing; also scrubs orphan Style rows for
+sibling plugins removed without `uninstall.sh`.
 
-**Full wipe** — copy-paste to remove plugin wiring *and* the shared package this
-installer may have pulled (skip the `pkg drop` line if something else still
-needs Pillow). Uninstall restores pre-OmaHud colours when the backup exists.
-MangoHud / Goverlay stay installed — we never pulled them:
+**Full wipe** — wiring + optional package (skip `pkg drop` if something else
+needs Pillow). MangoHud / Goverlay stay — we never pulled them:
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/uninstall.sh
-omarchy plugin disable io.github.alxwolfenstein97.omahud
 omarchy plugin remove io.github.alxwolfenstein97.omahud
-omarchy pkg drop python-pillow
+# pkg drop offered in a floating terminal; or: omarchy pkg drop python-pillow
 ```
 
 ## Limits, honestly

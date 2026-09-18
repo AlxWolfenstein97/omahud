@@ -181,6 +181,19 @@ omahud switcher             # picker → prints slug
 omahud current
 ```
 
+## Fresh VM smoke test
+
+```sh
+omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
+# Style → HUD Themes appears without a shell restart; carousel tiles warm (needs python-pillow)
+# Pick a loud theme; confirm the surface updates (MangoHud colours sync; goverlay optional)
+# Skip install floater → logout/reboot → floater returns (shell restart does not re-nag)
+# Parallel Style plugins share one Pillow floater; siblings only ask for their own missing pkgs
+# ./uninstall.sh → reset floater (omahud clear restores pre-theme colour snapshot when bak exists) + optional itemized pkg drop (Pillow notes Required By)
+# Skip remove floater + disable → reinstall → uninstall again → complete the floater
+# With mangohud/goverlay kept, Pillow drop may fail — fine; clear/uninstall still work without Pillow
+```
+
 ## Disable vs remove
 
 | Action | What happens |

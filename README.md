@@ -188,9 +188,9 @@ omahud current
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
 | `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional floating terminal (y/N) for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
 | `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall does this automatically when the backup is present. |
-| `omarchy pkg drop python-pillow` | Optional. Only if nothing else needs Pillow. Uninstall may open a floating terminal for this. |
+| `omarchy pkg drop python-pillow` | Optional. Itemized floater shows why + `pacman Required By` (MangoHud/goverlay may keep it). Clear still works without Pillow. |
 
-Quiet Service install: one-shot package prompt, theme-set hook kept, menu written
+Quiet Service install: one-shot package prompt (shared Pillow flock across Style plugins), theme-set hook kept, menu written
 only if `// omahud:start` markers are missing; also scrubs orphan Style rows for
 sibling plugins removed without `uninstall.sh`.
 

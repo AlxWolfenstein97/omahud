@@ -135,6 +135,20 @@ else
 fi
 
 note "done — no omahud menu/hook left; colour backup restored when present"
-note "plugin files remain at $here until you omit/remove the plugin"
 note "if colours still look themed: no pre-OmaHud colors.bak existed (paint stays)"
+if (( assume_yes )); then
+  note "full wipe (--yes): removing plugin $plugin_id"
+  if command -v omarchy >/dev/null 2>&1; then
+    # Leave the tree before Omarchy deletes it out from under us.
+    cd "${HOME:-/}" || cd /
+    omarchy plugin remove "$plugin_id" --yes \
+      || note "plugin remove failed — try: omarchy plugin remove $plugin_id --yes"
+  else
+    note "omarchy CLI missing — delete by hand: $here"
+  fi
+else
+  note "plugin files remain at $here until you omit/remove the plugin"
+  note "  omarchy plugin remove $plugin_id"
+fi
+
 exit 0

@@ -7,6 +7,11 @@
 #
 set -euo pipefail
 
+assume_yes=0
+for arg in "$@"; do
+  case $arg in --yes|-y) assume_yes=1 ;; esac
+done
+
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 plugin_id="io.github.alxwolfenstein97.omahud"
 hooks="$HOME/.config/omarchy/hooks/theme-set.d"
@@ -123,7 +128,11 @@ note "cleared state/cache (tombstone left so quiet install cannot resurrect)"
 omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 
-offer_pkg_drop python-pillow
+if (( ! assume_yes )); then
+  offer_pkg_drop python-pillow
+else
+  note "pkg-drop floater skipped (--yes); packages left installed"
+fi
 
 note "done — no omahud menu/hook left; colour backup restored when present"
 note "plugin files remain at $here until you omit/remove the plugin"

@@ -112,6 +112,7 @@ mkdir -p "$(dirname "$menu_lock")"
   "$here/bin/omahud" uninstall-menu 2>/dev/null || true
 ) 9>"$menu_lock"
 rm -f "$hooks/omahud"
+rm -f "$state/armed-theme-hook" "$state/armed-style-menu"
 note "removed theme-set hook"
 
 rm -rf "$cache"

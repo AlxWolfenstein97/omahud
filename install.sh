@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# OmaHud installer. Safe to re-run: theme-set hook always; menu written once
+# OmaHud installer. Safe to re-run: theme-set hook + Style menu opt-in (marketplace consent)
 # (quiet skips rewrite when // omahud:start markers already exist).
 # Does NOT replace MangoHud.conf — only colour keys on sync/set.
 #
@@ -11,8 +11,14 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 quiet=0
+with_style_menu=0
+with_theme_hook=0
+arm_all=0
 for arg in "$@"; do
   case $arg in
+    --with-style-menu) with_style_menu=1 ;;
+    --with-theme-hook) with_theme_hook=1 ;;
+    --arm-all) arm_all=1 ;;
     --quiet) quiet=1 ;;
   esac
 done
@@ -54,6 +60,35 @@ fi
 
 
 mkdir -p "$hooks" "$state" "$HOME/.config/MangoHud"
+
+# --- marketplace consent: Style menu / theme-set hook are opt-in -----------
+# Quiet Service must not write user config unless previously armed.
+# Interactive asks; --with-style-menu / --with-theme-hook / --arm-all force.
+# Existing hook/menu from older installs grandfather into armed-*.
+arm_theme_hook=0
+arm_style_menu=0
+[[ -f $hooks/omahud ]] && arm_theme_hook=1
+menu_file="${menu_file:-$HOME/.config/omarchy/extensions/omarchy-menu.jsonc}"
+[[ -f $menu_file ]] && grep -qF '// omahud:start' "$menu_file" && arm_style_menu=1
+(( with_theme_hook || arm_all )) && arm_theme_hook=1
+(( with_style_menu || arm_all )) && arm_style_menu=1
+[[ -f $state/armed-theme-hook ]] && arm_theme_hook=1
+[[ -f $state/armed-style-menu ]] && arm_style_menu=1
+if (( ! quiet )); then
+  if (( ! arm_theme_hook )); then
+    printf '%s' "omahud: install theme-set auto-sync hook? [Y/n] "
+    read -r _ans || _ans=
+    case ${_ans:-Y} in [nN]|[nN][oO]) arm_theme_hook=0 ;; *) arm_theme_hook=1 ;; esac
+  fi
+  if (( ! arm_style_menu )); then
+    printf '%s' "omahud: install Style → HUD Themes menu entry? [Y/n] "
+    read -r _ans || _ans=
+    case ${_ans:-Y} in [nN]|[nN][oO]) arm_style_menu=0 ;; *) arm_style_menu=1 ;; esac
+  fi
+fi
+if (( arm_theme_hook )); then touch "$state/armed-theme-hook"; else rm -f "$state/armed-theme-hook"; fi
+if (( arm_style_menu )); then touch "$state/armed-style-menu"; else rm -f "$state/armed-style-menu"; fi
+
 
 chmod 755 "$here"/bin/* "$here/omarchy/theme-set-hook" "$here/check.sh" \
   "$here/install.sh" "$here/uninstall.sh" 2>/dev/null || true
@@ -190,9 +225,15 @@ fi
 # ------------------------------------------------------------------- theme hook
 # Prefer OmaHud over any legacy full-file mangohud theme hook.
 rm -f "$hooks/mangohud"
-install -m 755 "$here/omarchy/theme-set-hook" "$hooks/omahud"
-note "hook: $hooks/omahud"
+if (( arm_theme_hook )); then
+  install -m 755 "$here/omarchy/theme-set-hook" "$hooks/omahud"
+  note "hook: $hooks/omahud"
+else
+  rm -f "$hooks/omahud"
+  note "theme-set hook skipped — run: $here/tools/install-theme-hook.sh"
+fi
 
+if (( arm_style_menu )); then
 # ------------------------------------------------------------------------ menu
 # Interactive: always install-menu + normalize. Quiet: only if our markers are
 # absent — do not rewrite/normalize omarchy-menu.jsonc on every shell start.
@@ -283,13 +324,16 @@ ORPHANSCRUB
     fi
   fi
 ) 9>"$menu_lock"
+else
+  note "Style menu skipped — run: $here/tools/install-style-menu.sh"
+fi
 if (( ! quiet )); then
   note "Style → HUD Themes is live; if the row is missing, run: omarchy-shell shell rescanPlugins"
 fi
 
 # ----------------------------------------------------------- initial apply/sync
 if command -v omarchy >/dev/null 2>&1; then
-  if (( ! quiet )) || [[ ! -f $state/synced ]]; then
+  if (( ! quiet )) || { [[ ! -f $state/synced ]] && (( arm_theme_hook )); }; then
     if [[ -f $HOME/.config/MangoHud/MangoHud.conf ]] \
       && "$here/bin/omahud-sync" --quiet >/dev/null 2>&1; then
       touch "$state/synced"

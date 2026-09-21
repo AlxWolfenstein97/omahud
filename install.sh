@@ -152,7 +152,8 @@ pull_pkgs() {
   fi
 
   note "OmaHud needs ${missing[*]} — Style → HUD Themes — MangoHud colour retints"
-  if (( ! quiet )) && [[ -t 0 || -t 1 ]]; then
+  # --yes / family oneshot: install inline (no floater). Interactive TTY same.
+  if (( assume_yes )) || { (( ! quiet )) && [[ -t 0 || -t 1 ]]; }; then
     printf '%s\n' "OmaHud"
     printf '%s\n' "io.github.alxwolfenstein97.omahud"
     printf '%s\n' "Style → HUD Themes — MangoHud colour retints"

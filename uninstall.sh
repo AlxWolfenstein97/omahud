@@ -2,7 +2,7 @@
 #
 # Menu, theme-set hook, cache/state. Restores MangoHud colour backup via
 # `omahud clear` while colors.bak still exists. Optional pkg drop in this TTY
-# (no floater). Hardened contrast / goverlay sync kept — uninstall does not
+# (this TTY). Hardened contrast / goverlay sync kept — uninstall does not
 # touch layout or metrics beyond colour restore.
 #
 set -euo pipefail
@@ -36,7 +36,7 @@ try_pkg_drop() {
 }
 
 ask_pkg_drop() {
-  # Interactive — prompts in this terminal (no floater).
+  # Interactive — prompts in this terminal (this TTY).
   local -a have=()
   local pkg a req
   for pkg in "$@"; do

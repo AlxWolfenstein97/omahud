@@ -146,22 +146,24 @@ Same for the small helpers: `./tools/install-style-menu.sh --yes` /
 ```
 
 **Full wipe (this plugin)** — same ease as `install.sh --yes`
-(teardown + `plugin remove`; best-effort `pkg drop` for deps this plugin may
-have pulled — kept only when pacman still needs them elsewhere):
+(full teardown + `plugin remove`; best-effort `pkg drop` for deps this plugin
+may have pulled — kept only when pacman still needs them elsewhere):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/uninstall.sh --yes
 ```
 
-**Wipe the whole family** (each plugin’s `uninstall.sh --yes`, then a final
-shared-dep sweep — paint / hooks / menus / DRM / SDDM / root extras gone):
+**Wipe the whole family** (runs each plugin’s `uninstall.sh --yes` — same full
+teardown as a single-plugin wipe — then a final shared-dep sweep):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/wipe-all-family.sh
 ```
 
 Interactive `./install.sh` still asks [Y/n] if you prefer. Quiet shell restarts
-only restore what you already armed. `./uninstall.sh` clears the arm flags.
+only restore what you already armed. `./uninstall.sh --yes` is a full wipe for
+that plugin (same teardown family wipe runs); without `--yes` you get TTY
+prompts for optional package drops.
 
 
 
@@ -217,7 +219,7 @@ omahud current
 omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 # Style → HUD Themes appears without a shell restart; carousel tiles warm (needs python-pillow)
 # Pick a loud theme; confirm the surface updates (MangoHud colours sync; goverlay optional)
-# plugin add alone + reboot → still no floater (quiet skips pkgs); run install.sh for deps/hooks
+# plugin add alone + reboot → quiet restores wiring only; run install.sh / arm-all for deps/hooks
 # Parallel install.sh: shared Pillow flock; siblings only ask for their own missing pkgs
 # ./uninstall.sh → this TTY: omahud clear (colour snapshot) + optional pkg drop
 # Skip pkg prompts (n) + disable → reinstall → uninstall again → answer y if you want drops
@@ -233,8 +235,7 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 | `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall / full wipe do this automatically when the backup is present. |
 | `omarchy pkg drop python-pillow` | Optional. TTY uninstall prompts show why + `pacman Required By` (MangoHud/goverlay may keep it). Clear still works without Pillow. |
 
-Quiet Service install (`--quiet`): **no package floaters** — restores already-armed
-wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
+Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
 family `arm-all-family.sh`. Menu written only if `// omahud:start` markers are
 missing; also scrubs orphan Style rows for siblings removed without `uninstall.sh`.
 

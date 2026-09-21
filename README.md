@@ -15,8 +15,8 @@ neon; the HUD either ignored it or wiped your metrics layout on every switch.
 OmaHud closes that gap the same way Style → OBS Themes works: a labelled image
 picker, one mockup per installed theme, and an apply step that only rewrites
 existing `*_color` keys. Pick once, or let `omarchy theme set` keep the HUD in
-lockstep forever after — **live, in-game**, with no restart. That is the thing
-the old full-file `.tpl` never gave you.
+lockstep forever after — **live, in-game**, with no restart. Layout stays yours;
+only the paint follows the theme.
 
 ## Goals (and honest limits)
 
@@ -76,8 +76,8 @@ Omarchy — not because you need a “how do I HUD” tutorial. MangoHud is one 
 those tools you should already know a bit: 32-bit bits when you need them,
 loading it (often chained with gamemode / gamescope / other Steam launch
 options), Lutris wiring outside Steam, and so on. That is why we **do not pull**
-`mangohud` or `goverlay` (same idea as OmaOBS not pulling OBS). The old theme
-`.tpl` was optional if you already ran Mango; this plugin is the same deal.
+`mangohud` or `goverlay` (same idea as OmaOBS not pulling OBS). Optional if you
+already run Mango; this plugin is the same deal.
 OmaHud only pulls **Pillow** for the Style carousel.
 
 [Goverlay](https://github.com/benjamimgois/goverlay) is still the sane place to
@@ -197,8 +197,8 @@ omarchy plugin enable io.github.alxwolfenstein97.omahud
    desktop theme change.
 
 Shape stays with your conf / Goverlay; paint stays with OmaHud — traps above.
-Catppuccin’s MangoHud pack is still a full-file replace (layout + pastel
-colours), same smash as the old themed `.tpl`. OmaHud keeps the split.
+Full-file MangoHud packs (layout + colours smashed together) are a different
+tooling class. OmaHud keeps the split.
 
 CLI:
 

@@ -5,12 +5,13 @@
 # Does NOT replace MangoHud.conf — only colour keys on sync/set.
 #
 # Flags:
-#   --quiet   less chatter (used by the shell service on startup)
+#   --quiet   shell service: restore armed wiring; no pkg floaters
 #
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 quiet=0
+no_pkgs=0
 with_style_menu=0
 with_theme_hook=0
 arm_all=0
@@ -21,7 +22,8 @@ for arg in "$@"; do
     --with-theme-hook) with_theme_hook=1 ;;
     --arm-all) arm_all=1 ;;
     --yes|-y) assume_yes=1; arm_all=1 ;;
-    --quiet) quiet=1 ;;
+    --quiet) quiet=1; no_pkgs=1 ;;  # Service: no pkg floaters; arm-all / interactive own deps
+    --no-pkgs) no_pkgs=1 ;;
   esac
 done
 
@@ -218,7 +220,9 @@ pull_pkgs() {
 # plugin is optional paint for people who already run the overlay.
 # Interactive: ask in this TTY. Quiet/Service: one floating terminal once
 # (pkgs-prompted), once per login session (runtime stamp); again after reboot or reinstall. Still never pulls mangohud.
-pull_pkgs python-pillow || true
+if (( ! no_pkgs )); then
+  pull_pkgs python-pillow || true
+fi
 if ! pacman -Q mangohud &>/dev/null; then
   note "mangohud not on the box — OmaHud is paint-only; sync no-ops until you already run the overlay"
 elif [[ ! -f $HOME/.config/MangoHud/MangoHud.conf ]]; then

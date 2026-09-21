@@ -227,10 +227,10 @@ omahud current
 omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 # Style → HUD Themes appears without a shell restart; carousel tiles warm (needs python-pillow)
 # Pick a loud theme; confirm the surface updates (MangoHud colours sync; goverlay optional)
-# Skip install floater → logout/reboot → floater returns (shell restart does not re-nag)
-# Parallel Style plugins share one Pillow floater; siblings only ask for their own missing pkgs
-# ./uninstall.sh → reset floater (omahud clear restores pre-theme colour snapshot when bak exists) + optional itemized pkg drop (Pillow notes Required By)
-# Skip remove floater + disable → reinstall → uninstall again → complete the floater
+# plugin add alone + reboot → still no floater (quiet skips pkgs); run install.sh for deps/hooks
+# Parallel install.sh: shared Pillow flock; siblings only ask for their own missing pkgs
+# ./uninstall.sh → this TTY: omahud clear (colour snapshot) + optional pkg drop
+# Skip pkg prompts (n) + disable → reinstall → uninstall again → answer y if you want drops
 # With mangohud/goverlay kept, Pillow drop may fail — fine; clear/uninstall still work without Pillow
 ```
 
@@ -239,9 +239,9 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional floating terminal (y/N) for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional TTY y/N for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
 | `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall does this automatically when the backup is present. |
-| `omarchy pkg drop python-pillow` | Optional. Itemized floater shows why + `pacman Required By` (MangoHud/goverlay may keep it). Clear still works without Pillow. |
+| `omarchy pkg drop python-pillow` | Optional. TTY uninstall prompts show why + `pacman Required By` (MangoHud/goverlay may keep it). Clear still works without Pillow. |
 
 Quiet Service install (`--quiet`): **no package floaters** — restores already-armed
 wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or

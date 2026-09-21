@@ -99,10 +99,8 @@ chmod 755 "$here"/bin/* "$here/omarchy/theme-set-hook" "$here/check.sh" \
 
 export OMAHUD_PLUGIN_DIR="$here"
 
-# Packages need sudo. Shared python-pillow is claimed under a flock so parallel
-# quiet Services do not each open a Pillow floater. Claim is session-scoped;
-# same-session reinstall clears it with the uninstall tombstone (shell restart does not). Scan pacman -Q first.
-# Floater: plugin header + missing pkgs only; closable via Done / default answers.
+# Packages need sudo. Shared python-pillow claimed under a flock so parallel
+# install.sh runs do not each race a Pillow pull. Scan pacman -Q first.
 pull_pkgs() {
   local -a missing=()
   local pkg
@@ -154,61 +152,25 @@ pull_pkgs() {
   fi
 
   note "OmaHud needs ${missing[*]} — Style → HUD Themes — MangoHud colour retints"
-  # --yes / family oneshot: install inline (no floater). Interactive TTY same.
-  if (( assume_yes )) || { (( ! quiet )) && [[ -t 0 || -t 1 ]]; }; then
-    printf '%s\n' "OmaHud"
-    printf '%s\n' "io.github.alxwolfenstein97.omahud"
-    printf '%s\n' "Style → HUD Themes — MangoHud colour retints"
-    printf '%s\n' "────────────────────────────────"
-    printf '%s\n' "Needs to install (sudo / pacman) — only packages missing on this system:"
-    for pkg in "${missing[@]}"; do
-      case $pkg in
-        python-pillow) printf '  • %s — %s\n' "$pkg" 'draw HUD Themes carousel mockups' ;;
-        *) printf '  • %s\n' "$pkg" ;;
-      esac
-    done
-    printf '%s\n' "────────────────────────────────"
-    printf '%s\n' ""
-    if omarchy pkg add "${missing[@]}"; then
-      rm -f "$pkgs_stamp"
-      return 0
-    fi
-    warn "OmaHud could not install: ${missing[*]}"
-    return 1
+  # Inline pkg add (interactive or --yes). No floaters.
+  printf '%s\n' "OmaHud"
+  printf '%s\n' "io.github.alxwolfenstein97.omahud"
+  printf '%s\n' "Style → HUD Themes — MangoHud colour retints"
+  printf '%s\n' "────────────────────────────────"
+  printf '%s\n' "Needs to install (sudo / pacman) — only packages missing on this system:"
+  for pkg in "${missing[@]}"; do
+    case $pkg in
+      python-pillow) printf '  • %s — %s\n' "$pkg" 'draw HUD Themes carousel mockups' ;;
+      *) printf '  • %s\n' "$pkg" ;;
+    esac
+  done
+  printf '%s\n' "────────────────────────────────"
+  printf '%s\n' ""
+  if omarchy pkg add "${missing[@]}"; then
+    rm -f "$pkgs_stamp"
+    return 0
   fi
-
-  if [[ -f $pkgs_stamp ]]; then
-    warn "OmaHud still missing ${missing[*]} (Style → HUD Themes — MangoHud colour retints) — run: omarchy pkg add ${missing[*]}"
-    return 1
-  fi
-  mkdir -p "$runtime_dir"
-  touch "$pkgs_stamp"
-  local script="$state/install-floater.sh"
-  {
-    printf '%s\n' '#!/usr/bin/env bash' 'set -uo pipefail'
-    printf '%s\n' "printf '%s\\n' 'OmaHud'"
-    printf '%s\n' "printf '%s\\n' 'io.github.alxwolfenstein97.omahud'"
-    printf '%s\n' "printf '%s\\n' 'Style → HUD Themes — MangoHud colour retints'"
-    printf '%s\n' "printf '%s\\n' '────────────────────────────────'"
-    printf '%s\n' "printf '%s\\n' 'Needs to install (sudo / pacman) — only packages missing on this system:'"
-    for pkg in "${missing[@]}"; do
-      case $pkg in
-        python-pillow) printf '%s\n' "printf '  • %s — %s\\n' 'python-pillow' 'draw HUD Themes carousel mockups'" ;;
-        *) printf '%s\n' "printf '  • %s\\n' $(printf %q "$pkg")" ;;
-      esac
-    done
-    printf '%s\n' "printf '%s\\n' '────────────────────────────────'"
-    printf '%s\n' "printf '%s\\n' ''"
-    printf '%s\n' "omarchy pkg add ${missing[*]}"
-
-  } >"$script"
-  chmod 755 "$script"
-  if command -v omarchy-launch-floating-terminal-with-presentation >/dev/null 2>&1; then
-    warn "OmaHud missing ${missing[*]} (Style → HUD Themes — MangoHud colour retints) — opening floating terminal"
-    omarchy-launch-floating-terminal-with-presentation "bash $(printf %q "$script")" >/dev/null 2>&1 &
-  else
-    warn "OmaHud: run omarchy pkg add ${missing[*]}"
-  fi
+  warn "OmaHud could not install: ${missing[*]}"
   return 1
 }
 
@@ -218,8 +180,7 @@ pull_pkgs() {
 # Pillow draws Style carousel mockups — install before warming previews.
 # Do NOT pull mangohud / goverlay (same idea as OmaOBS not pulling OBS): this
 # plugin is optional paint for people who already run the overlay.
-# Interactive: ask in this TTY. Quiet/Service: one floating terminal once
-# (pkgs-prompted), once per login session (runtime stamp); again after reboot or reinstall. Still never pulls mangohud.
+# Interactive / --yes: pkg add in this TTY. Quiet Service skips pkgs (no_pkgs). Still never pulls mangohud.
 if (( ! no_pkgs )); then
   pull_pkgs python-pillow || true
 fi

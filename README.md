@@ -146,13 +146,15 @@ Same for the small helpers: `./tools/install-style-menu.sh --yes` /
 ```
 
 **Full wipe (this plugin)** — same ease as `install.sh --yes`
-(teardown + `plugin remove`; skips optional pkg Y/n; pillow etc. stay):
+(teardown + `plugin remove`; best-effort `pkg drop` for deps this plugin may
+have pulled — kept only when pacman still needs them elsewhere):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/uninstall.sh --yes
 ```
 
-**Wipe the whole family** (calls each plugin’s `uninstall.sh --yes`):
+**Wipe the whole family** (each plugin’s `uninstall.sh --yes`, then a final
+shared-dep sweep — paint / hooks / menus / DRM / SDDM / root extras gone):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/wipe-all-family.sh
@@ -227,8 +229,8 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Runs `omahud clear` while `colors.bak` still exists (best-effort), then removes menu, hook, and cache/state. Restores the pre-OmaHud colour snapshot when that bak exists; if you never had a pre-theme conf (no bak), paint stays. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional TTY y/N for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
-| `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall does this automatically when the backup is present. |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` first (restores the pre-OmaHud colour snapshot from `colors.bak` — normal after any themed apply), then removes menu, hook, and cache/state. Full wipe / family wipe do the same clear. Only if you never applied (no bak) is there nothing to restore. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional TTY y/N for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
+| `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall / full wipe do this automatically when the backup is present. |
 | `omarchy pkg drop python-pillow` | Optional. TTY uninstall prompts show why + `pacman Required By` (MangoHud/goverlay may keep it). Clear still works without Pillow. |
 
 Quiet Service install (`--quiet`): **no package floaters** — restores already-armed
@@ -236,7 +238,8 @@ wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, o
 family `arm-all-family.sh`. Menu written only if `// omahud:start` markers are
 missing; also scrubs orphan Style rows for siblings removed without `uninstall.sh`.
 
-**Full wipe** — one shot (`--yes` skips pkg Y/n and removes the plugin).
+**Full wipe** — one shot (`--yes` skips pkg Y/n, best-effort drops pillow if nothing
+else needs it, and removes the plugin).
 MangoHud / Goverlay stay — we never pulled them:
 
 ```sh
@@ -247,9 +250,9 @@ MangoHud / Goverlay stay — we never pulled them:
 
 - **No conf yet** — we never pull MangoHud; sync is a no-op until
   `~/.config/MangoHud/MangoHud.conf` exists.
-- **Uninstall / clear** — restores `colors.bak` (snapshot taken once before the
-  first retint). If bak was never written (no colour keys yet, or never applied),
-  themed paint stays after uninstall.
+- **Uninstall / clear / full wipe** — restore `colors.bak` (snapshot taken once
+  before the first retint). That is the paint teardown. Only if bak was never
+  written (never applied) is there nothing to put back.
 - **Not a MangoHud howto** — 32-bit libs, Steam / Lutris / gamescope / gamemode
   launch chains, etc. are assumed knowledge. See **Goverlay / MangoHud: traps**.
 - **Colour pickers in Goverlay** — don’t use them for theme matching; saving a

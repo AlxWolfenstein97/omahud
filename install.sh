@@ -190,8 +190,17 @@ elif [[ ! -f $HOME/.config/MangoHud/MangoHud.conf ]]; then
 fi
 
 # ------------------------------------------------------------------- theme hook
-# Prefer OmaHud over any legacy full-file mangohud theme hook.
-rm -f "$hooks/mangohud"
+# Prefer OmaHud over a *legacy OmaHud* full-file mangohud theme hook only.
+# Never delete an unrelated user hook that happens to share the name.
+if [[ -f $hooks/mangohud ]]; then
+  if grep -qiE 'omahud|OMAHUD|io\.github\.alxwolfenstein97\.omahud|omahud-sync' \
+    "$hooks/mangohud" 2>/dev/null; then
+    rm -f "$hooks/mangohud"
+    note "removed legacy OmaHud mangohud hook"
+  else
+    note "keeping $hooks/mangohud (not an OmaHud legacy hook)"
+  fi
+fi
 if (( arm_theme_hook )); then
   install -m 755 "$here/omarchy/theme-set-hook" "$hooks/omahud"
   note "hook: $hooks/omahud"

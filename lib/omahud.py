@@ -346,7 +346,10 @@ def color_backup_path(conf: Path) -> Path:
 def backup_colors_once(conf: Path, text: str) -> None:
     """Snapshot colour keys for this conf once (before first OmaHud retint)."""
     bak = color_backup_path(conf)
+    path_side = bak.with_suffix(".path")
     if bak.is_file():
+        if not path_side.is_file():
+            path_side.write_text(str(conf.resolve()) + "\n", encoding="utf-8")
         return
     # Migrate legacy single colors.bak onto the primary conf only.
     legacy = paths()["state"] / "colors.bak"
@@ -354,6 +357,7 @@ def backup_colors_once(conf: Path, text: str) -> None:
     if legacy.is_file() and conf.resolve() == primary.resolve() and not bak.is_file():
         bak.parent.mkdir(parents=True, exist_ok=True)
         atomic_write(bak, legacy.read_text(encoding="utf-8"))
+        path_side.write_text(str(conf.resolve()) + "\n", encoding="utf-8")
         return
     lines = []
     for line in text.splitlines():
@@ -366,6 +370,7 @@ def backup_colors_once(conf: Path, text: str) -> None:
     if lines:
         bak.parent.mkdir(parents=True, exist_ok=True)
         atomic_write(bak, "\n".join(lines) + "\n")
+        path_side.write_text(str(conf.resolve()) + "\n", encoding="utf-8")
 
 
 def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool]:
@@ -464,20 +469,40 @@ def restore_backup(*, quiet: bool = False) -> int:
         if not migrated.is_file():
             migrated.parent.mkdir(parents=True, exist_ok=True)
             atomic_write(migrated, legacy.read_text(encoding="utf-8"))
+            migrated.with_suffix(".path").write_text(
+                str(primary.resolve()) + "\n", encoding="utf-8"
+            )
 
     any_bak = backups_dir.is_dir() and any(backups_dir.glob("*.bak"))
     if not any_bak and not legacy.is_file():
         note("no colour backup yet (apply a theme once first)")
         return 1
 
+    # Restore every backed-up config, ignoring the *current* Goverlay-sync
+    # toggle — turning sync off before clear must not strand per-game paints.
+    to_restore: list[tuple[Path, Path]] = []
+    if backups_dir.is_dir():
+        for bak in sorted(backups_dir.glob("*.bak")):
+            path_side = bak.with_suffix(".path")
+            if not path_side.is_file():
+                continue
+            conf = Path(path_side.read_text(encoding="utf-8").strip())
+            if not str(conf):
+                continue
+            to_restore.append((conf, bak))
+
+    # Older backups without .path: match against all possible targets.
+    if not to_restore:
+        for conf in mangohud_targets(include_goverlay=True):
+            bak = color_backup_path(conf)
+            if bak.is_file():
+                to_restore.append((conf, bak))
+
     total = 0
     any_changed = False
     restored_files = 0
-    for conf in mangohud_targets():
+    for conf, bak in to_restore:
         if not conf.is_file():
-            continue
-        bak = color_backup_path(conf)
-        if not bak.is_file():
             continue
         restored = _load_color_bak(bak)
         if not restored:

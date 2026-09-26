@@ -85,10 +85,10 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "$plugin_id" >/dev/null 2>&1 || true
 fi
 
-# Restore pre-OmaHud colours while the backup still exists (before state wipe).
-if [[ -f $state/colors.bak ]]; then
+# Restore pre-OmaHud colours while per-config backups still exist (before state wipe).
+if [[ -d $state/color-backups ]] || [[ -f $state/colors.bak ]]; then
   "$here/bin/omahud" clear --quiet 2>/dev/null || true
-  note "restored MangoHud colours from backup"
+  note "restored MangoHud colours from per-config backup(s)"
 fi
 
 mkdir -p "$(dirname "$menu_lock")"
@@ -116,7 +116,7 @@ else
 fi
 
 note "done — no omahud menu/hook left; colour backup restored when present"
-note "if colours still look themed: no pre-OmaHud colors.bak existed (paint stays)"
+note "if colours still look themed: no pre-OmaHud per-config backup existed (paint stays)"
 if (( assume_yes )); then
   note "full wipe (--yes): removing plugin $plugin_id"
   if command -v omarchy >/dev/null 2>&1; then

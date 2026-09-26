@@ -335,10 +335,25 @@ def mangohud_targets(*, include_goverlay: bool | None = None) -> list[Path]:
     return out
 
 
-def backup_colors_once(text: str) -> None:
+def color_backup_path(conf: Path) -> Path:
+    """Stable per-config backup path under state/color-backups/."""
     state = paths()["state"]
-    bak = state / "colors.bak"
+    # Encode absolute path so primary + each Goverlay gameconfig stay distinct.
+    key = str(conf.resolve()).replace("/", "_").lstrip("_")
+    return state / "color-backups" / f"{key}.bak"
+
+
+def backup_colors_once(conf: Path, text: str) -> None:
+    """Snapshot colour keys for this conf once (before first OmaHud retint)."""
+    bak = color_backup_path(conf)
     if bak.is_file():
+        return
+    # Migrate legacy single colors.bak onto the primary conf only.
+    legacy = paths()["state"] / "colors.bak"
+    primary = mangohud_conf_path()
+    if legacy.is_file() and conf.resolve() == primary.resolve() and not bak.is_file():
+        bak.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write(bak, legacy.read_text(encoding="utf-8"))
         return
     lines = []
     for line in text.splitlines():
@@ -349,7 +364,7 @@ def backup_colors_once(text: str) -> None:
         if key in COLOR_KEYS:
             lines.append(stripped)
     if lines:
-        state.mkdir(parents=True, exist_ok=True)
+        bak.parent.mkdir(parents=True, exist_ok=True)
         atomic_write(bak, "\n".join(lines) + "\n")
 
 
@@ -361,7 +376,7 @@ def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool
             "config) first; OmaHud only retints colours"
         )
     original = conf.read_text(encoding="utf-8")
-    backup_colors_once(original)
+    backup_colors_once(conf, original)
     out: list[str] = []
     replaced = 0
     for line in original.splitlines():
@@ -428,31 +443,59 @@ def apply_theme(slug: str, *, quiet: bool = False) -> int:
     return 0
 
 
-def restore_backup(*, quiet: bool = False) -> int:
-    bak = paths()["state"] / "colors.bak"
-    if not bak.is_file():
-        note("no colour backup yet (apply a theme once first)")
-        return 1
+def _load_color_bak(bak: Path) -> dict[str, str]:
     restored: dict[str, str] = {}
     for line in bak.read_text(encoding="utf-8").splitlines():
         if "=" not in line:
             continue
         key, _, value = line.partition("=")
         restored[key.strip()] = value.strip()
+    return restored
+
+
+def restore_backup(*, quiet: bool = False) -> int:
+    state = paths()["state"]
+    backups_dir = state / "color-backups"
+    legacy = state / "colors.bak"
+    # Ensure legacy single bak is visible as the primary conf's backup.
+    primary = mangohud_conf_path()
+    if legacy.is_file():
+        migrated = color_backup_path(primary)
+        if not migrated.is_file():
+            migrated.parent.mkdir(parents=True, exist_ok=True)
+            atomic_write(migrated, legacy.read_text(encoding="utf-8"))
+
+    any_bak = backups_dir.is_dir() and any(backups_dir.glob("*.bak"))
+    if not any_bak and not legacy.is_file():
+        note("no colour backup yet (apply a theme once first)")
+        return 1
+
     total = 0
     any_changed = False
+    restored_files = 0
     for conf in mangohud_targets():
         if not conf.is_file():
+            continue
+        bak = color_backup_path(conf)
+        if not bak.is_file():
+            continue
+        restored = _load_color_bak(bak)
+        if not restored:
             continue
         n, changed = patch_mangohud_colors(conf, restored)
         total += n
         any_changed = any_changed or changed
-    current = paths()["state"] / "current"
+        restored_files += 1
+
+    current = state / "current"
     if current.is_file():
         current.unlink()
     if not quiet:
+        if restored_files == 0:
+            note("no per-config colour backups matched live MangoHud.conf paths")
+            return 1
         note(
-            f"restored {total} colour key(s) from backup"
+            f"restored {total} colour key(s) across {restored_files} file(s)"
             + (" (changed)" if any_changed else "")
         )
     return 0

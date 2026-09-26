@@ -231,8 +231,8 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 | Action | What happens |
 |--------|----------------|
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Runs `omahud clear` first (restores the pre-OmaHud colour snapshot from `colors.bak` — normal after any themed apply), then removes menu, hook, and cache/state. Full wipe / family wipe do the same clear. Only if you never applied (no bak) is there nothing to restore. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional TTY y/N for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
-| `omahud clear` | Restores the colour snapshot from first apply (`colors.bak`, written once before the first retint). Uninstall / full wipe do this automatically when the backup is present. |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` first (restores each modified MangoHud.conf from its own pre-OmaHud colour snapshot — normal after any themed apply), then removes menu, hook, and cache/state. Full wipe / family wipe do the same clear. Only if you never applied (no bak) is there nothing to restore. Tombstone + disable **first** so Service quiet cannot resurrect the Style row. Optional TTY y/N for `pkg drop`. Hardened contrast / goverlay sync kept — not reverted. |
+| `omahud clear` | Restores each modified MangoHud.conf from its own first-apply snapshot (`state/color-backups/…`). Uninstall / full wipe do this automatically when the backup is present. |
 | `omarchy pkg drop python-pillow` | Optional. TTY uninstall prompts show why + `pacman Required By` (MangoHud/goverlay may keep it). Clear still works without Pillow. |
 
 Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
@@ -251,7 +251,7 @@ MangoHud / Goverlay stay — we never pulled them:
 
 - **No conf yet** — we never pull MangoHud; sync is a no-op until
   `~/.config/MangoHud/MangoHud.conf` exists.
-- **Uninstall / clear / full wipe** — restore `colors.bak` (snapshot taken once
+- **Uninstall / clear / full wipe** — restore per-config colour backups (snapshot taken once per file
   before the first retint). That is the paint teardown. Only if bak was never
   written (never applied) is there nothing to put back.
 - **Not a MangoHud howto** — 32-bit libs, Steam / Lutris / gamescope / gamemode

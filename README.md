@@ -139,22 +139,24 @@ edit your Omarchy config, so they stay **opt-in**.
 Same for the small helpers: `./tools/install-style-menu.sh --yes` /
 `./tools/install-theme-hook.sh --yes`.
 
-**Arm the whole family in one shot** (after all plugins are installed):
+**Arm the whole family in one shot** (arms only what’s already installed — omit any `plugin add` you don’t want):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/arm-all-family.sh
 ```
 
 **Full wipe (this plugin)** — same ease as `install.sh --yes`
-(full teardown + `plugin remove`; best-effort `pkg drop` only for packages this install
-recorded pulling (pre-existing deps stay) — kept only when pacman still needs them elsewhere):
+(full teardown + `plugin remove`; ledger-only `pkg drop` — only packages this install
+recorded pulling; pre-existing deps stay; drop may fail and the package stays if something
+else still needs it — e.g. you installed Goverlay after we pulled Pillow — that’s fine):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/uninstall.sh --yes
 ```
 
 **Wipe the whole family** (runs each plugin’s `uninstall.sh --yes` — same full
-teardown as a single-plugin wipe; ledger-only pkg drops, no blanket shared-dep sweep):
+teardown as a single-plugin wipe; ledger-only pkg drops, no blanket shared-dep sweep —
+drop may fail and stay if something else still requires the package):
 
 ```sh
 ~/.config/omarchy/plugins/io.github.alxwolfenstein97.chroma/tools/wipe-all-family.sh
@@ -256,13 +258,13 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 | `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
 | `./uninstall.sh` then disable / remove | Runs `omahud clear` first (restores each modified MangoHud.conf from its own pre-OmaHud colour snapshot — normal after any themed apply), then removes menu, hook, and cache/state. Full wipe / family wipe do the same clear. Only if you never applied (no bak) is there nothing to restore. Tombstone + disable **first** (quiet Service will not re-arm Style without a loud install). Optional TTY y/N for `pkg drop` of packages this install recorded pulling. Hardened contrast / goverlay sync kept — not reverted. |
 | `omahud clear` | Restores each modified MangoHud.conf from its own first-apply snapshot (`state/color-backups/…`). Uninstall / full wipe do this automatically when the backup is present. |
-| `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it. TTY prompts show why + `pacman Required By`. |
+| `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it; may fail/stay if something else still requires it. TTY prompts show why + `pacman Required By`. |
 
 Quiet Service install (`--quiet`): restores already-armed wiring only. Deps + Style consent come from interactive `install.sh`, `--yes`, or
 family `arm-all-family.sh`. Menu written only if `// omahud:start` markers are
 missing; also scrubs orphan Style rows for siblings removed without `uninstall.sh`.
 
-**Full wipe** — one shot (`--yes` skips pkg Y/n, best-effort drops packages this install recorded pulling (if nothing else needs them), and removes the plugin).
+**Full wipe** — one shot (`--yes` skips pkg Y/n, ledger-only drops of packages this install recorded pulling (may fail and stay if something else still needs them — e.g. Goverlay after Pillow), and removes the plugin).
 MangoHud / Goverlay stay — we never pulled them:
 
 ```sh

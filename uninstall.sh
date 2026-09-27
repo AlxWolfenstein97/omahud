@@ -100,6 +100,9 @@ rm -f "$hooks/omahud"
 rm -f "$state/armed-theme-hook" "$state/armed-style-menu"
 note "removed theme-set hook"
 
+# Remember packages *this* install pulled before wiping state.
+mapfile -t pkgs_we_pulled < <(grep -v '^[[:space:]]*$' "$state/pkgs-installed" 2>/dev/null || true)
+
 rm -rf "$cache"
 find "$state" -mindepth 1 ! -name uninstalled -delete 2>/dev/null || true
 touch "$state/uninstalled"
@@ -108,11 +111,13 @@ note "cleared state/cache (tombstone left so quiet install cannot resurrect)"
 omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
 omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
 
-if (( ! assume_yes )); then
-  ask_pkg_drop python-pillow
+if ((${#pkgs_we_pulled[@]} == 0)); then
+  note "no package ledger — skipping pkg drop (nothing this install recorded pulling)"
+elif (( ! assume_yes )); then
+  ask_pkg_drop "${pkgs_we_pulled[@]}"
 else
-  note "full wipe (--yes): trying package drops (kept if still required elsewhere)"
-  try_pkg_drop python-pillow
+  note "full wipe (--yes): dropping only packages this install recorded pulling"
+  try_pkg_drop "${pkgs_we_pulled[@]}"
 fi
 
 note "done — no omahud menu/hook left; colour backup restored when present"

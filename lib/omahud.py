@@ -1041,12 +1041,59 @@ def cmd_clear(args: argparse.Namespace) -> int:
     return restore_backup(quiet=bool(args.quiet))
 
 
+def _prewarm_picker_cache(preview_root: Path) -> None:
+    """Warm omarchy-menu-images' thumbnail cache in the background.
+
+    Otherwise the first real open spends ~100 ms turning our already
+    1536x864 tiles into the picker's JPEG cache. --cache-only does that and
+    exits, so run it detached and at low priority: install stays quick and
+    the picker opens from a warm cache.
+    """
+    if not preview_root.is_dir():
+        return
+    command = [
+        "timeout",
+        "120",
+        "nice",
+        "-n",
+        "10",
+        "ionice",
+        "-c",
+        "3",
+        "omarchy-menu-images",
+        "--cache-only",
+        str(preview_root),
+    ]
+    try:
+        subprocess.Popen(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        # A trimmed system may lack nice/ionice; the picker still works.
+        try:
+            subprocess.Popen(
+                ["omarchy-menu-images", "--cache-only", str(preview_root)],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        except OSError:
+            pass
+
+
 def cmd_preview(args: argparse.Namespace) -> int:
     if args.theme:
         path = generate_preview(args.theme, force=True)
+        _prewarm_picker_cache(path.parent)
         print(path)
         return 0
     paths_out = generate_all_previews()
+    _prewarm_picker_cache(paths()["cache"] / "previews")
     print(len(paths_out))
     return 0
 

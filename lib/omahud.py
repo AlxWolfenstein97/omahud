@@ -868,7 +868,9 @@ def generate_all_previews() -> list[Path]:
     if not dirty:
         return out
     _preload_render()
-    workers = max(1, min(len(dirty), os.cpu_count() or 2))
+    # Respect CPU affinity (containers, taskset); fall back on older Pythons.
+    cpus = getattr(os, "process_cpu_count", os.cpu_count)() or 2
+    workers = max(1, min(len(dirty), cpus))
     try:
         ctx = mp.get_context("fork")
     except ValueError:

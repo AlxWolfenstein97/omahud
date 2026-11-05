@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# OmaHud installer. Safe to re-run: theme-set hook + Style menu opt-in (marketplace consent)
+# OmaHud installer. Safe to re-run: theme-set hook + Appearance menu opt-in (marketplace consent)
 # (quiet skips rewrite when // omahud:start markers already exist).
 # Does NOT replace MangoHud.conf — only colour keys on sync/set.
 #
@@ -38,7 +38,7 @@ pkgs_stamp="$runtime_dir/pkgs-prompted"
 
 # Tombstone from uninstall. Disable-first in uninstall.sh means a later quiet
 # Service run is a re-enable / re-add — clear tombstone + prompt stamps so the
-# Style menu and package prompts can run again after wipe.
+# Appearance menu and package prompts can run again after wipe.
 if [[ -f $state/uninstalled ]]; then
   # Per-plugin prompt stamps + shared Pillow claim. Claim survives an ignored
   # claim and would block pillow-only plugins (OmaBoot/OmaVT/OmaOBS) on
@@ -64,7 +64,7 @@ fi
 
 mkdir -p "$hooks" "$state" "$HOME/.config/MangoHud"
 
-# --- marketplace consent: Style menu / theme-set hook are opt-in -----------
+# --- marketplace consent: Appearance menu / theme-set hook are opt-in -----------
 # Quiet Service must not write user config unless previously armed.
 # Interactive asks; --with-style-menu / --with-theme-hook / --arm-all force.
 # Existing hook/menu from older installs grandfather into armed-*.
@@ -84,7 +84,7 @@ if (( ! quiet && ! assume_yes )); then
     case ${_ans:-Y} in [nN]|[nN][oO]) arm_theme_hook=0 ;; *) arm_theme_hook=1 ;; esac
   fi
   if (( ! arm_style_menu )); then
-    printf '%s' "omahud: install Style → HUD Themes menu entry? [Y/n] "
+    printf '%s' "omahud: install Appearance → Extenders → HUD menu entry? [Y/n] "
     read -r _ans || _ans=
     case ${_ans:-Y} in [nN]|[nN][oO]) arm_style_menu=0 ;; *) arm_style_menu=1 ;; esac
   fi
@@ -146,20 +146,20 @@ pull_pkgs() {
   fi
 
   if ! command -v omarchy >/dev/null 2>&1; then
-    warn "OmaHud needs ${missing[*]} for: Style → HUD Themes — MangoHud colour retints — install manually: pacman -S ${missing[*]}"
+    warn "OmaHud needs ${missing[*]} for: Appearance → Extenders → HUD — MangoHud colour retints — install manually: pacman -S ${missing[*]}"
     return 1
   fi
 
-  note "OmaHud needs ${missing[*]} — Style → HUD Themes — MangoHud colour retints"
+  note "OmaHud needs ${missing[*]} — Appearance → Extenders → HUD — MangoHud colour retints"
   # Inline pkg add (interactive or --yes). Prompts stay in this TTY.
   printf '%s\n' "OmaHud"
   printf '%s\n' "io.github.alxwolfenstein97.omahud"
-  printf '%s\n' "Style → HUD Themes — MangoHud colour retints"
+  printf '%s\n' "Appearance → Extenders → HUD — MangoHud colour retints"
   printf '%s\n' "────────────────────────────────"
   printf '%s\n' "Needs to install (sudo / pacman) — only packages missing on this system:"
   for pkg in "${missing[@]}"; do
     case $pkg in
-      python-pillow) printf '  • %s — %s\n' "$pkg" 'draw HUD Themes carousel mockups' ;;
+      python-pillow) printf '  • %s — %s\n' "$pkg" 'draw HUD carousel mockups' ;;
       *) printf '  • %s\n' "$pkg" ;;
     esac
   done
@@ -182,7 +182,7 @@ pull_pkgs() {
 
 
 
-# Pillow draws Style carousel mockups — install before warming previews.
+# Pillow draws Appearance carousel mockups — install before warming previews.
 # Do NOT pull mangohud / goverlay (same idea as OmaOBS not pulling OBS): this
 # plugin is optional paint for people who already run the overlay.
 # Interactive / --yes: pkg add in this TTY. Quiet Service skips pkgs (no_pkgs). Still never pulls mangohud.
@@ -225,7 +225,7 @@ menu_file="$HOME/.config/omarchy/extensions/omarchy-menu.jsonc"
 mkdir -p "$(dirname "$menu_lock")"
 (
   flock 9
-  # Scrub Style rows for siblings removed via plugin remove (no uninstall.sh).
+  # Scrub Extender rows for siblings removed via plugin remove (no uninstall.sh).
   scrubbed=0
   scrub_out=$(python3 - <<'ORPHANSCRUB' || true
 from pathlib import Path
@@ -251,6 +251,8 @@ for marker, pid in pairs:
     if start not in text:
         continue
     text = re.sub(re.escape(start) + r".*?" + re.escape(end) + r"\n?", "", text, flags=re.S)
+if not re.search(r'"appearance\.extenders\.[^"]+"', text):
+    text = re.sub(r'^[ \t]*"appearance\.extenders"[ \t]*:[ \t]*\{[^\n]*\},[ \t]*\n?', '', text, flags=re.M)
 if text != orig:
     menu.write_text(text, encoding="utf-8")
     print("scrubbed-orphan-style-menus")
@@ -282,8 +284,8 @@ ORPHANSCRUB
           if (( do_refresh )); then
             touch "$stamp"
             omarchy-shell -q omarchy.menu refresh >/dev/null 2>&1 || true
-            # Quiet Service installs need rescan too — otherwise Style rows
-            # (esp. OBS Themes) stay invisible until a manual shell restart.
+            # Quiet Service installs need rescan too — otherwise Extender rows
+            # (esp. OBS) stay invisible until a manual shell restart.
             omarchy-shell -q shell rescanPlugins >/dev/null 2>&1 || true
           fi
         fi
@@ -307,10 +309,10 @@ ORPHANSCRUB
   fi
 ) 9>"$menu_lock"
 else
-  note "Style menu skipped — run: $here/tools/install-style-menu.sh"
+  note "Appearance menu skipped — run: $here/tools/install-style-menu.sh"
 fi
 if (( ! quiet )); then
-  note "Style → HUD Themes is live; if the row is missing, run: omarchy-shell shell rescanPlugins"
+  note "Appearance → Extenders → HUD is live; if the row is missing, run: omarchy-shell shell rescanPlugins"
 fi
 
 # ----------------------------------------------------------- initial apply/sync
@@ -336,6 +338,6 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "$plugin_id" >/dev/null 2>&1 || true
 fi
 
-note "done — Style > HUD Themes, or '$here/bin/omahud switcher'"
+note "done — Appearance > Extenders > HUD, or '$here/bin/omahud switcher'"
 note "colours only — Goverlay keeps owning metrics / layout / keybinds"
 exit 0

@@ -67,7 +67,9 @@ grep -q 'gpu_stats' "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf"
 [[ -f $tmp/cache/previews/fixture.png ]] && pass "preview png" || bad "preview png"
 
 "$here/bin/omahud" install-menu
-grep -q 'style.hud' "$tmp/.config/omarchy/extensions/omarchy-menu.jsonc" && pass "menu" || bad "menu"
+menu="$tmp/.config/omarchy/extensions/omarchy-menu.jsonc"
+grep -q 'appearance.extenders.hud' "$menu" && pass "menu" || bad "menu"
+grep -q '"appearance.extenders"' "$menu" && pass "menu parent" || bad "menu parent"
 
 "$here/bin/omahud" clear --quiet
 grep -q 'background_color=000000' "$tmp/MangoHud/MangoHud.conf" && pass "clear restore" || bad "clear restore"

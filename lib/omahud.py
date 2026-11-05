@@ -3,7 +3,7 @@
 
 Discovers every theme with a colors.toml. Patches only colour keys in
 ~/.config/MangoHud/MangoHud.conf so Goverlay / hand-tuned metrics survive.
-Optional Style carousel mockups show the tint before you apply.
+Optional Appearance carousel mockups show the tint before you apply.
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ PLUGIN_ID = "io.github.alxwolfenstein97.omahud"
 HEX_RE = re.compile(r"^#?[0-9A-Fa-f]{6}$")
 MOCKUP_LAYOUT_VERSION = "7"
 MOCKUP_SIZE = (1536, 864)
-# omarchy-menu-images serves 1536×864 then crops ~8% sides into the Style tile —
+# omarchy-menu-images serves 1536×864 then crops ~8% sides into the Appearance tile —
 # keep the HUD panel inside this inset or labels get chopped.
 SAFE_X = 120
 SAFE_Y = 56
@@ -709,7 +709,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     Traces the user's Goverlay metrics silhouette (GPU/VRAM/CPU/RAM/engine/FPS +
     frametime graph), not a live capture. Colours come from colors.toml via the
     same MangoHud key map as apply_theme. Panel stays inside SAFE_X/SAFE_Y so the
-    Style carousel crop does not chop labels. Light themes keep a near-opaque
+    Appearance carousel crop does not chop labels. Light themes keep a near-opaque
     panel and contrast-boost weak accents for the tile only; dark themes keep
     the raw palette with a lighter outline so they stay closer to live HUD.
     """
@@ -926,16 +926,41 @@ def menu_action() -> str:
     )
 
 
+EXTENDER_PARENT = '  "appearance.extenders": {"icon": "\U000f03d8", "label": "Extenders"},'
+
+
+def ensure_extender_parent(content: str) -> str:
+    """Define the shared Appearance → Extenders row once, before its children."""
+    if re.search(r'^[ \t]*"appearance\.extenders"[ \t]*:', content, re.M):
+        return content
+    brace = content.find("{")
+    if brace < 0:
+        raise RuntimeError("menu config has no root object")
+    return content[: brace + 1] + "\n" + EXTENDER_PARENT + content[brace + 1 :]
+
+
+def prune_extender_parent(content: str) -> str:
+    """Drop the shared parent once the last extender child is gone."""
+    if re.search(r'"appearance\.extenders\.[^"]+"', content):
+        return content
+    return re.sub(
+        r'^[ \t]*"appearance\.extenders"[ \t]*:[ \t]*\{[^\n]*\},[ \t]*\n?',
+        "",
+        content,
+        flags=re.M,
+    )
+
+
 def install_menu_entry() -> None:
     path = paths()["menu"]
     content = path.read_text(encoding="utf-8") if path.is_file() else "{\n}\n"
     content = remove_marked(content, MENU_START, MENU_END)
     entries = [
         (
-            "style.hud",
+            "appearance.extenders.hud",
             {
                 "icon": "󰡦",
-                "label": "HUD Themes",
+                "label": "HUD",
                 "aliases": ["hud", "mangohud", "goverlay", "fps"],
                 "description": "Retint MangoHud from any Omarchy palette without touching your layout or metrics",
                 "action": menu_action(),
@@ -950,7 +975,8 @@ def install_menu_entry() -> None:
         body.append(f"  {json.dumps(key)}: {json.dumps(value, ensure_ascii=False)},")
     body.append(MENU_END)
     insertion = "\n".join(body) + "\n"
-    atomic_write(path, content[: brace + 1] + "\n" + insertion + content[brace + 1 :])
+    updated = content[: brace + 1] + "\n" + insertion + content[brace + 1 :]
+    atomic_write(path, ensure_extender_parent(updated))
     normalize_style_extender_menu_order(path)
     note(f"menu entry → {path}")
 
@@ -961,7 +987,8 @@ def uninstall_menu_entry() -> None:
         return
     content = path.read_text(encoding="utf-8")
     if MENU_START in content:
-        atomic_write(path, remove_marked(content, MENU_START, MENU_END))
+        content = remove_marked(content, MENU_START, MENU_END)
+        atomic_write(path, prune_extender_parent(content))
 
 
 # --------------------------------------------------------------------------- commands
@@ -1083,15 +1110,15 @@ def build_parser() -> argparse.ArgumentParser:
     clear.add_argument("--quiet", action="store_true")
     clear.set_defaults(func=cmd_clear)
 
-    preview = sub.add_parser("preview", help="Warm Style mockups")
+    preview = sub.add_parser("preview", help="Warm Appearance mockups")
     preview.add_argument("theme", nargs="?")
     preview.set_defaults(func=cmd_preview)
 
     sub.add_parser("switcher", help="Open image picker; print chosen theme slug").set_defaults(
         func=cmd_switcher
     )
-    sub.add_parser("install-menu", help="Add Style → HUD Themes").set_defaults(func=cmd_install_menu)
-    sub.add_parser("uninstall-menu", help="Remove Style → HUD Themes").set_defaults(
+    sub.add_parser("install-menu", help="Add Appearance → Extenders → HUD").set_defaults(func=cmd_install_menu)
+    sub.add_parser("uninstall-menu", help="Remove Appearance → Extenders → HUD").set_defaults(
         func=cmd_uninstall_menu
     )
     return parser

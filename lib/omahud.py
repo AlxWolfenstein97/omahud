@@ -957,10 +957,10 @@ def install_menu_entry() -> None:
     content = remove_marked(content, MENU_START, MENU_END)
     entries = [
         (
-            "appearance.extenders.hud",
+            "appearance.extenders.mangohud",
             {
                 "icon": "󰡦",
-                "label": "HUD",
+                "label": "MangoHud",
                 "aliases": ["hud", "mangohud", "goverlay", "fps"],
                 "description": "Retint MangoHud from any Omarchy palette without touching your layout or metrics",
                 "action": menu_action(),
@@ -1117,8 +1117,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("switcher", help="Open image picker; print chosen theme slug").set_defaults(
         func=cmd_switcher
     )
-    sub.add_parser("install-menu", help="Add Appearance → Extenders → HUD").set_defaults(func=cmd_install_menu)
-    sub.add_parser("uninstall-menu", help="Remove Appearance → Extenders → HUD").set_defaults(
+    sub.add_parser("install-menu", help="Add Appearance → Extenders → MangoHud").set_defaults(func=cmd_install_menu)
+    sub.add_parser("uninstall-menu", help="Remove Appearance → Extenders → MangoHud").set_defaults(
         func=cmd_uninstall_menu
     )
     return parser

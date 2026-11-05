@@ -51,7 +51,7 @@ keeps pace after that). Same idea as OmaOBS / OmaCursor / OmaBoot.
 
 ## What you get
 
-- **Appearance → Extenders → HUD** in the Omarchy menu — same carousel picker as Unlock /
+- **Appearance → Extenders → MangoHud** in the Omarchy menu — same carousel picker as Unlock /
   Theme / OBS / Cursors / Boot.
 - **Live theme discovery** — every Omarchy theme with a `colors.toml` under
   `~/.config/omarchy/themes` or `$OMARCHY_PATH/themes`.
@@ -236,7 +236,7 @@ omahud current
 
 ```sh
 omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
-# Appearance → Extenders → HUD appears without a shell restart; carousel tiles warm (needs python-pillow)
+# Appearance → Extenders → MangoHud appears without a shell restart; carousel tiles warm (needs python-pillow)
 # Pick a loud theme; confirm the surface updates (MangoHud colours sync; goverlay optional)
 # plugin add alone + reboot → quiet restores wiring only; run install.sh / arm-all for deps/hooks
 # Parallel install.sh: shared Pillow flock; siblings only ask for their own missing pkgs

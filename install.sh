@@ -84,7 +84,7 @@ if (( ! quiet && ! assume_yes )); then
     case ${_ans:-Y} in [nN]|[nN][oO]) arm_theme_hook=0 ;; *) arm_theme_hook=1 ;; esac
   fi
   if (( ! arm_style_menu )); then
-    printf '%s' "omahud: install Appearance → Extenders → HUD menu entry? [Y/n] "
+    printf '%s' "omahud: install Appearance → Extenders → MangoHud menu entry? [Y/n] "
     read -r _ans || _ans=
     case ${_ans:-Y} in [nN]|[nN][oO]) arm_style_menu=0 ;; *) arm_style_menu=1 ;; esac
   fi
@@ -146,15 +146,15 @@ pull_pkgs() {
   fi
 
   if ! command -v omarchy >/dev/null 2>&1; then
-    warn "OmaHud needs ${missing[*]} for: Appearance → Extenders → HUD — MangoHud colour retints — install manually: pacman -S ${missing[*]}"
+    warn "OmaHud needs ${missing[*]} for: Appearance → Extenders → MangoHud — MangoHud colour retints — install manually: pacman -S ${missing[*]}"
     return 1
   fi
 
-  note "OmaHud needs ${missing[*]} — Appearance → Extenders → HUD — MangoHud colour retints"
+  note "OmaHud needs ${missing[*]} — Appearance → Extenders → MangoHud — MangoHud colour retints"
   # Inline pkg add (interactive or --yes). Prompts stay in this TTY.
   printf '%s\n' "OmaHud"
   printf '%s\n' "io.github.alxwolfenstein97.omahud"
-  printf '%s\n' "Appearance → Extenders → HUD — MangoHud colour retints"
+  printf '%s\n' "Appearance → Extenders → MangoHud — MangoHud colour retints"
   printf '%s\n' "────────────────────────────────"
   printf '%s\n' "Needs to install (sudo / pacman) — only packages missing on this system:"
   for pkg in "${missing[@]}"; do
@@ -264,7 +264,7 @@ ORPHANSCRUB
   # block, so marker presence alone is not enough: rewrite once after an
   # upgrade until the new Appearance → Extenders key is there.
   if (( quiet )) && [[ -f $menu_file ]] && grep -qF '// omahud:start' "$menu_file" \
-     && grep -qF '"appearance.extenders.hud"' "$menu_file"; then
+     && grep -qF '"appearance.extenders.mangohud"' "$menu_file"; then
     write_menu=0
   fi
   if (( write_menu )); then
@@ -316,7 +316,7 @@ else
   note "Appearance menu skipped — run: $here/tools/install-style-menu.sh"
 fi
 if (( ! quiet )); then
-  note "Appearance → Extenders → HUD is live; if the row is missing, run: omarchy-shell shell rescanPlugins"
+  note "Appearance → Extenders → MangoHud is live; if the row is missing, run: omarchy-shell shell rescanPlugins"
 fi
 
 # ----------------------------------------------------------- initial apply/sync
@@ -342,6 +342,6 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin enable "$plugin_id" >/dev/null 2>&1 || true
 fi
 
-note "done — Appearance > Extenders > HUD, or '$here/bin/omahud switcher'"
+note "done — Appearance > Extenders > MangoHud, or '$here/bin/omahud switcher'"
 note "colours only — Goverlay keeps owning metrics / layout / keybinds"
 exit 0

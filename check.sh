@@ -68,7 +68,7 @@ grep -q 'gpu_stats' "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf"
 
 "$here/bin/omahud" install-menu
 menu="$tmp/.config/omarchy/extensions/omarchy-menu.jsonc"
-grep -q 'appearance.extenders.hud' "$menu" && pass "menu" || bad "menu"
+grep -q 'appearance.extenders.mangohud' "$menu" && pass "menu" || bad "menu"
 grep -q '"appearance.extenders"' "$menu" && pass "menu parent" || bad "menu parent"
 
 "$here/bin/omahud" clear --quiet

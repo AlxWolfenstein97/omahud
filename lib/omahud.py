@@ -17,6 +17,7 @@ import subprocess
 import sys
 import tempfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -529,6 +530,7 @@ def restore_backup(*, quiet: bool = False) -> int:
 # --------------------------------------------------------------------------- mockups
 
 
+@lru_cache(maxsize=None)
 def try_ui_font(size: int) -> ImageFont.ImageFont:
     for path in (
         "/usr/share/fonts/TTF/DejaVuSansMono.ttf",
@@ -588,7 +590,7 @@ def save_png_atomic(img: Image.Image, dest: Path) -> None:
     fd, tmp = tempfile.mkstemp(prefix=f".{dest.name}.", suffix=".png", dir=dest.parent)
     try:
         os.close(fd)
-        img.save(tmp, format="PNG", optimize=True)
+        img.save(tmp, format="PNG", compress_level=3)
         os.replace(tmp, dest)
     finally:
         try:
@@ -848,6 +850,11 @@ def _warm_one(slug: str) -> Path:
     return generate_preview(slug, force=True)
 
 
+def _preload_render() -> None:
+    """Import Pillow before forking so every worker inherits it."""
+    Image._load()
+
+
 def generate_all_previews() -> list[Path]:
     out: list[Path] = []
     root = paths()["cache"] / "previews"
@@ -860,6 +867,7 @@ def generate_all_previews() -> list[Path]:
     dirty = [s for s in wanted if not _preview_fresh(preview_path(s), _preview_fingerprint(s))]
     if not dirty:
         return out
+    _preload_render()
     workers = max(1, min(len(dirty), os.cpu_count() or 2))
     try:
         ctx = mp.get_context("fork")
@@ -1055,6 +1063,10 @@ def cmd_switcher(_: argparse.Namespace) -> int:
         selected = str(preview_dir / f"{current}.png")
     cmd = [
         "omarchy-menu-images",
+        # Our tiles are already 1536×864. Let the picker draw them immediately
+        # and warm omarchy-menu-images' JPEG cache in the background instead of
+        # blocking the open on a thumbnail pass.
+        "--lazy-thumbnails",
         "--show-labels",
         "--filterable",
         "--print-name",

@@ -2,7 +2,7 @@
 #
 # OmaHud installer. Safe to re-run: theme-set hook + Appearance menu opt-in (marketplace consent)
 # (quiet skips rewrite when // omahud:start markers already exist).
-# Does NOT replace MangoHud.conf — only colour keys on sync/set.
+# Does NOT replace MangoHud.conf — only color keys on sync/set.
 #
 # Flags:
 #   --quiet   shell service: restore armed wiring; no package installs
@@ -146,15 +146,15 @@ pull_pkgs() {
   fi
 
   if ! command -v omarchy >/dev/null 2>&1; then
-    warn "OmaHud needs ${missing[*]} for: Appearance → Extenders → MangoHud — MangoHud colour retints — install manually: pacman -S ${missing[*]}"
+    warn "OmaHud needs ${missing[*]} for: Appearance → Extenders → MangoHud — MangoHud color retints — install manually: pacman -S ${missing[*]}"
     return 1
   fi
 
-  note "OmaHud needs ${missing[*]} — Appearance → Extenders → MangoHud — MangoHud colour retints"
+  note "OmaHud needs ${missing[*]} — Appearance → Extenders → MangoHud — MangoHud color retints"
   # Inline pkg add (interactive or --yes). Prompts stay in this TTY.
   printf '%s\n' "OmaHud"
   printf '%s\n' "io.github.alxwolfenstein97.omahud"
-  printf '%s\n' "Appearance → Extenders → MangoHud — MangoHud colour retints"
+  printf '%s\n' "Appearance → Extenders → MangoHud — MangoHud color retints"
   printf '%s\n' "────────────────────────────────"
   printf '%s\n' "Needs to install (sudo / pacman) — only packages missing on this system:"
   for pkg in "${missing[@]}"; do
@@ -325,7 +325,7 @@ if command -v omarchy >/dev/null 2>&1; then
     if [[ -f $HOME/.config/MangoHud/MangoHud.conf ]] \
       && "$here/bin/omahud-sync" --quiet >/dev/null 2>&1; then
       touch "$state/synced"
-      note "synced MangoHud colours to current Omarchy palette"
+      note "synced MangoHud colors to current Omarchy palette"
     else
       warn "initial sync skipped (no MangoHud.conf yet? set metrics in Goverlay first)"
     fi
@@ -343,5 +343,5 @@ if command -v omarchy >/dev/null 2>&1; then
 fi
 
 note "done — Appearance > Extenders > MangoHud, or '$here/bin/omahud switcher'"
-note "colours only — Goverlay keeps owning metrics / layout / keybinds"
+note "colors only — Goverlay keeps owning metrics / layout / keybinds"
 exit 0

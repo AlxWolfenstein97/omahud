@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""OmaHud — Omarchy palettes → MangoHud colours (layout stays yours).
+"""OmaHud — Omarchy palettes → MangoHud colors (layout stays yours).
 
-Discovers every theme with a colors.toml. Patches only colour keys in
+Discovers every theme with a colors.toml. Patches only color keys in
 ~/.config/MangoHud/MangoHud.conf so Goverlay / hand-tuned metrics survive.
 Optional Appearance carousel mockups show the tint before you apply.
 """
@@ -68,7 +68,7 @@ MOCKUP_BG_ALPHA = 0.6
 MOCKUP_BG_ALPHA_LIGHT = 0.95
 MOCKUP_LIGHT_LUMA = 160.0
 # Pillow mockups lack MangoHud's AA + live outline; on *light* panels only, pull
-# weak accents toward black until they clear ~AA contrast (apply colours untouched).
+# weak accents toward black until they clear ~AA contrast (apply colors untouched).
 # Dark panels keep the raw palette — boosting them washed muted themes louder.
 MOCKUP_MIN_CONTRAST = 4.5
 # Keys we may retint. Multi-value keys use comma-separated RRGGBB lists.
@@ -252,7 +252,7 @@ def current_omahud_slug() -> str | None:
 
 
 def palette_from_theme(slug: str) -> dict[str, str]:
-    """Map colors.toml → MangoHud colour slots (RRGGBB, no '#')."""
+    """Map colors.toml → MangoHud color slots (RRGGBB, no '#')."""
     directory = theme_dir(slug)
     if directory is None:
         raise FileNotFoundError(f"theme not found or missing colors.toml: {slug}")
@@ -306,7 +306,7 @@ def mangohud_conf_path() -> Path:
 
 
 def goverlay_sync_enabled() -> bool:
-    """Retint Goverlay's own MangoHud copies so the GUI colour pickers match.
+    """Retint Goverlay's own MangoHud copies so the GUI color pickers match.
 
     Default on. Disable with OMAHUD_SYNC_GOVERLAY=0 or state file
     ~/.local/state/omarchy/omahud/no-goverlay-sync.
@@ -344,7 +344,7 @@ def color_backup_path(conf: Path) -> Path:
 
 
 def backup_colors_once(conf: Path, text: str) -> None:
-    """Snapshot colour keys for this conf once (before first OmaHud retint)."""
+    """Snapshot color keys for this conf once (before first OmaHud retint)."""
     bak = color_backup_path(conf)
     path_side = bak.with_suffix(".path")
     if bak.is_file():
@@ -374,11 +374,11 @@ def backup_colors_once(conf: Path, text: str) -> None:
 
 
 def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool]:
-    """Rewrite existing colour keys only. Returns (replacements, changed)."""
+    """Rewrite existing color keys only. Returns (replacements, changed)."""
     if not conf.is_file():
         raise FileNotFoundError(
             f"no MangoHud.conf at {conf} — set up metrics in Goverlay (or write a "
-            "config) first; OmaHud only retints colours"
+            "config) first; OmaHud only retints colors"
         )
     original = conf.read_text(encoding="utf-8")
     backup_colors_once(conf, original)
@@ -395,7 +395,7 @@ def patch_mangohud_colors(conf: Path, colors: dict[str, str]) -> tuple[int, bool
                 replaced += 1
                 continue
         out.append(line)
-    # Do not append missing colour keys — that would invent HUD chrome the user
+    # Do not append missing color keys — that would invent HUD chrome the user
     # never asked for. Metrics stay a Goverlay / hand-edit concern.
     new_text = "\n".join(out)
     if original.endswith("\n") and not new_text.endswith("\n"):
@@ -414,7 +414,7 @@ def apply_theme(slug: str, *, quiet: bool = False) -> int:
     if not primary.is_file():
         raise FileNotFoundError(
             f"no MangoHud.conf at {primary} — set up metrics in Goverlay (or write a "
-            "config) first; OmaHud only retints colours"
+            "config) first; OmaHud only retints colors"
         )
 
     total = 0
@@ -435,7 +435,7 @@ def apply_theme(slug: str, *, quiet: bool = False) -> int:
     if not quiet:
         label = pretty_name(slug)
         if any_changed:
-            note(f"retinted {total} colour key(s) ← {label}")
+            note(f"retinted {total} color key(s) ← {label}")
             for path in touched:
                 note(f"  {path}")
             if goverlay_sync_enabled() and any(
@@ -444,7 +444,7 @@ def apply_theme(slug: str, *, quiet: bool = False) -> int:
                 note("Goverlay GUI copy updated — reopen Goverlay to see the pickers match")
             note("layout / metrics / keybinds untouched")
         else:
-            note(f"already matching {label} ({total} colour key(s) across {len(targets)} file(s))")
+            note(f"already matching {label} ({total} color key(s) across {len(targets)} file(s))")
     return 0
 
 
@@ -475,7 +475,7 @@ def restore_backup(*, quiet: bool = False) -> int:
 
     any_bak = backups_dir.is_dir() and any(backups_dir.glob("*.bak"))
     if not any_bak and not legacy.is_file():
-        note("no colour backup yet (apply a theme once first)")
+        note("no color backup yet (apply a theme once first)")
         return 1
 
     # Restore every backed-up config, ignoring the *current* Goverlay-sync
@@ -517,10 +517,10 @@ def restore_backup(*, quiet: bool = False) -> int:
         current.unlink()
     if not quiet:
         if restored_files == 0:
-            note("no per-config colour backups matched live MangoHud.conf paths")
+            note("no per-config color backups matched live MangoHud.conf paths")
             return 1
         note(
-            f"restored {total} colour key(s) across {restored_files} file(s)"
+            f"restored {total} color key(s) across {restored_files} file(s)"
             + (" (changed)" if any_changed else "")
         )
     return 0
@@ -661,9 +661,9 @@ def _mockup_ink(
 
 
 def _outline_ink(fill: tuple[int, int, int], panel: tuple[int, int, int] | None = None) -> tuple[int, int, int]:
-    """Edge colour that thickens glyphs against the panel (not against the fill).
+    """Edge color that thickens glyphs against the panel (not against the fill).
 
-    Light outline around Latte's dark ink washed #4c4f69 into grey on cream;
+    Light outline around Latte's dark ink washed #4c4f69 into gray on cream;
     dark panels still get a light edge around neon labels.
     """
     if panel is not None:
@@ -707,14 +707,14 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     """True Theme Vibe HUD — middle-left 3-col panel matching the PasCube reference.
 
     Traces the user's Goverlay metrics silhouette (GPU/VRAM/CPU/RAM/engine/FPS +
-    frametime graph), not a live capture. Colours come from colors.toml via the
+    frametime graph), not a live capture. Colors come from colors.toml via the
     same MangoHud key map as apply_theme. Panel stays inside SAFE_X/SAFE_Y so the
     Appearance carousel crop does not chop labels. Light themes keep a near-opaque
     panel and contrast-boost weak accents for the tile only; dark themes keep
     the raw palette with a lighter outline so they stay closer to live HUD.
     """
     w, h = size
-    # Neutral “game” viewport (PasCube-ish grey), so palette reads on the HUD only
+    # Neutral “game” viewport (PasCube-ish gray), so palette reads on the HUD only
     field = (55, 55, 58)
     floor = (48, 48, 50)
     img = Image.new("RGB", (w, h), field)
@@ -819,7 +819,7 @@ def render_mockup(palette: dict[str, str], dest: Path, size: tuple[int, int] = M
     )
 
     # Badge sits on the dark floor — always use light ink + dark outline.
-    badge = f"{palette['_name']} · MangoHud colours · layout yours"
+    badge = f"{palette['_name']} · MangoHud colors · layout yours"
     _draw_hud_text(
         draw,
         (SAFE_X, h - SAFE_Y + 8),
@@ -1087,13 +1087,13 @@ def cmd_uninstall_menu(_: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="omahud", description="OmaHud — MangoHud colour sync")
+    parser = argparse.ArgumentParser(prog="omahud", description="OmaHud — MangoHud color sync")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("list", help="List themes with colors.toml").set_defaults(func=cmd_list)
     sub.add_parser("current", help="Print last applied HUD theme slug").set_defaults(func=cmd_current)
 
-    show = sub.add_parser("show", help="Print colour keys for a theme")
+    show = sub.add_parser("show", help="Print color keys for a theme")
     show.add_argument("theme")
     show.set_defaults(func=cmd_show)
 
@@ -1106,7 +1106,7 @@ def build_parser() -> argparse.ArgumentParser:
     sync.add_argument("--quiet", action="store_true")
     sync.set_defaults(func=cmd_sync)
 
-    clear = sub.add_parser("clear", help="Restore colours from the pre-OmaHud backup")
+    clear = sub.add_parser("clear", help="Restore colors from the pre-OmaHud backup")
     clear.add_argument("--quiet", action="store_true")
     clear.set_defaults(func=cmd_clear)
 

@@ -3,7 +3,7 @@ import Quickshell.Io
 
 // OmaHud service plugin.
 //
-// Colour retints live in bin/omahud; the theme-set hook keeps MangoHud in step
+// Color retints live in bin/omahud; the theme-set hook keeps MangoHud in step
 // with Omarchy. This component only re-runs the installer at shell start so the
 // Appearance > Extenders > HUD menu entry and theme-set hook come back after a refresh.
 Item {

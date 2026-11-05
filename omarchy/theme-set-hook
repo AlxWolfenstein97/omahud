@@ -1,5 +1,5 @@
 #!/bin/bash
-# omahud theme-set hook — retint MangoHud colours to match the desktop theme.
+# omahud theme-set hook — retint MangoHud colors to match the desktop theme.
 # Layout / metrics / keybinds in MangoHud.conf are left alone.
 set -uo pipefail
 

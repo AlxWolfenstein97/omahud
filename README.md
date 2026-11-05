@@ -1,10 +1,10 @@
 # OmaHud
 
-**Omarchy themes your desktop. OmaHud retints MangoHud — colours only —
+**Omarchy themes your desktop. OmaHud retints MangoHud — colors only —
 so Goverlay (or your hand-tuned conf) keeps owning metrics, layout, and
 keybinds. Change theme mid-match and the overlay follows; no game restart.**
 
-![OmaHud — MangoHud colour mockup](preview.png)
+![OmaHud — MangoHud color mockup](preview.png)
 
 Stock Omarchy paints Hyprland, the terminal, and (with Chroma) your GTK apps.
 MangoHud stayed on whatever palette you last saved in Goverlay — or got
@@ -29,10 +29,10 @@ marketplace notes live in [Chroma](https://github.com/AlxWolfenstein97/chroma).
 
 | Goal | What that means here |
 |------|----------------------|
-| Zero extra assets | No per-theme HUD screenshots. Colours come from `colors.toml` alone. |
+| Zero extra assets | No per-theme HUD screenshots. Colors come from `colors.toml` alone. |
 | Extreme compatibility | Stock + user + foreign themes all appear in the picker automatically. |
-| Colours only | Rewrite existing `*_color` keys (including load / FPS triples if you turned those on). Never invent metrics or hotkeys. |
-| Goverlay / traps | Not a how-to-HUD guide — skip colour pickers, know what we paint. See below. |
+| Colors only | Rewrite existing `*_color` keys (including load / FPS triples if you turned those on). Never invent metrics or hotkeys. |
+| Goverlay / traps | Not a how-to-HUD guide — skip color pickers, know what we paint. See below. |
 | Live reload | Patch the conf; MangoHud picks it up mid-session. No game restart to judge a tint. |
 | Carousel-safe | Mockups are 1536×864 with ~8% side inset so the Appearance tile crop does not chop labels. |
 | Snappy pickers | Mockups warm in parallel across CPU cores and **skip tiles whose `colors.toml` (and layout version) haven’t changed** — reopen is near-instant. On par with Omarchy’s stock Appearance carousels. |
@@ -56,16 +56,16 @@ keeps pace after that). Same idea as OmaOBS / OmaCursor / OmaBoot.
 - **Live theme discovery** — every Omarchy theme with a `colors.toml` under
   `~/.config/omarchy/themes` or `$OMARCHY_PATH/themes`.
 - **Mockups** — middle-left 3-col metrics panel + frametime graph on a PasCube-ish
-  field, coloured from that theme’s palette (carousel-safe inset).
-- **Colours-only patch** — existing `*_color` keys in the global conf (and
+  field, colored from that theme’s palette (carousel-safe inset).
+- **Colors-only patch** — existing `*_color` keys in the global conf (and
   Goverlay’s copies by default), including `gpu_load_color` / `cpu_load_color` /
-  `fps_color` when those lines are already there. You decide how much colour
+  `fps_color` when those lines are already there. You decide how much color
   lives in the HUD by what Goverlay (or the conf) enables; we only repaint keys
   that exist. Layout stays yours — traps below.
 - **Live in-game retint** — MangoHud re-reads the conf; no game restart.
-- **theme-set hook** — `omarchy theme set …` keeps HUD colours in step.
-- **Escape hatches** — `omahud clear`, or a Goverlay colour preset (see traps).
-- **Stable Extender order** — install normalises extender blocks under a shared
+- **theme-set hook** — `omarchy theme set …` keeps HUD colors in step.
+- **Escape hatches** — `omahud clear`, or a Goverlay color preset (see traps).
+- **Stable Extender order** — install normalizes extender blocks under a shared
   flock (`Cursors` → `OBS` → `Boot` → `VT` → `TTY` → `HUD`) so quiet / itemised
   enables don’t race or shuffle the menu.
 
@@ -86,11 +86,11 @@ you do **not** waste time or walk into OmaHud-specific traps:
 
 | Trap | Reality |
 |------|---------|
-| Fiddling Goverlay **colour** pickers every theme change | Pointless for day-to-day theme matching — OmaHud owns paint from `colors.toml`. Use Goverlay for metrics, graphs, position, keybinds, and which **load / FPS colour ramps** are even enabled. |
-| Expecting a flat one-colour HUD | If you turned on `gpu_load_change` / `cpu_load_change` / `fps_color_change` (or left a preset that did), we retint those green→yellow→red (and FPS low→high) triples too — so load / FPS still read as status, not one flat accent. Same keys land in Goverlay’s copies when you reopen the GUI. |
+| Fiddling Goverlay **color** pickers every theme change | Pointless for day-to-day theme matching — OmaHud owns paint from `colors.toml`. Use Goverlay for metrics, graphs, position, keybinds, and which **load / FPS color ramps** are even enabled. |
+| Expecting a flat one-color HUD | If you turned on `gpu_load_change` / `cpu_load_change` / `fps_color_change` (or left a preset that did), we retint those green→yellow→red (and FPS low→high) triples too — so load / FPS still read as status, not one flat accent. Same keys land in Goverlay’s copies when you reopen the GUI. |
 | Expecting OmaHud to install or teach MangoHud | No. Bring your own overlay; we only retint an existing conf. |
 | Assuming every per-game conf gets painted | We touch `~/.config/MangoHud/MangoHud.conf` and, by default, Goverlay’s `gameconfig/*/MangoHud.conf` (so its GUI pickers match). Hand-rolled paths / launch-option confs **outside** that tree are on you. |
-| Saving a Goverlay colour preset then wondering why theme paint vanished | Intentional escape: Stock / Simple White / Afterburner / GOverlay puts non-theme colours back (layout kept). Next sync / Appearance pick restores Omarchy paint. Prefer `omahud clear` for the pre-OmaHud snapshot. |
+| Saving a Goverlay color preset then wondering why theme paint vanished | Intentional escape: Stock / Simple White / Afterburner / GOverlay puts non-theme colors back (layout kept). Next sync / Appearance pick restores Omarchy paint. Prefer `omahud clear` for the pre-OmaHud snapshot. |
 | Expecting Goverlay’s *app* chrome to theme | Out of scope (same stop-line as Chroma leftovers). Only MangoHud `*_color` keys move. |
 
 Opt out of the Goverlay `gameconfig` retint with
@@ -101,14 +101,14 @@ if you only want the global conf touched.
 
 MangoHud has no theme format to draw from — only a conf. We do not ask theme
 authors for HUD screenshots. One live PasCube capture locks the metrics
-silhouette; Pillow recolours that panel from every `colors.toml`.
+silhouette; Pillow recolors that panel from every `colors.toml`.
 
 **How it was done**
 
 1. Capture live `mangohud pascube` with the user’s middle-left Goverlay layout
-   (**Hackerman** colours).
-2. Trace that chrome in `lib/omahud.py` (SAFE_X / SAFE_Y inset), then recolour
-   from each theme’s MangoHud colour map.
+   (**Hackerman** colors).
+2. Trace that chrome in `lib/omahud.py` (SAFE_X / SAFE_Y inset), then recolor
+   from each theme’s MangoHud color map.
 3. Light themes get a near-opaque panel + contrast boost on the **tile only** so
    Latte pastels stay readable in the carousel; dark themes keep the raw palette.
    Apply always uses the raw `colors.toml` map.
@@ -210,13 +210,13 @@ omarchy plugin enable io.github.alxwolfenstein97.omahud
 
 1. `bin/omahud-switcher` renders PNG mockups into
    `~/.cache/omarchy/omahud/previews/`, then opens `omarchy-menu-images`.
-2. On selection, `bin/omahud-set` maps `colors.toml` → MangoHud colour keys and
+2. On selection, `bin/omahud-set` maps `colors.toml` → MangoHud color keys and
    patches them in place (live conf **and** Goverlay’s GUI copies by default).
 3. `~/.config/omarchy/hooks/theme-set.d/omahud` runs `omahud-sync` after every
    desktop theme change.
 
 Shape stays with your conf / Goverlay; paint stays with OmaHud — traps above.
-Full-file MangoHud packs (layout + colours smashed together) are a different
+Full-file MangoHud packs (layout + colors smashed together) are a different
 tooling class. OmaHud keeps the split.
 
 CLI:
@@ -226,7 +226,7 @@ omahud list
 omahud show tokyo-night
 omahud set tokyo-night      # pin HUD to that palette
 omahud sync                 # follow current Omarchy theme
-omahud clear                # restore pre-OmaHud colours
+omahud clear                # restore pre-OmaHud colors
 omahud preview              # warm all mockups
 omahud switcher             # picker → prints slug
 omahud current
@@ -237,10 +237,10 @@ omahud current
 ```sh
 omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 # Appearance → Extenders → MangoHud appears without a shell restart; carousel tiles warm (needs python-pillow)
-# Pick a loud theme; confirm the surface updates (MangoHud colours sync; goverlay optional)
+# Pick a loud theme; confirm the surface updates (MangoHud colors sync; goverlay optional)
 # plugin add alone + reboot → quiet restores wiring only; run install.sh / arm-all for deps/hooks
 # Parallel install.sh: shared Pillow flock; siblings only ask for their own missing pkgs
-# ./uninstall.sh → this TTY: omahud clear (colour snapshot) + optional pkg drop
+# ./uninstall.sh → this TTY: omahud clear (color snapshot) + optional pkg drop
 # Skip pkg prompts (n) + disable → reinstall → uninstall again → answer y if you want drops
 # With mangohud/goverlay kept, Pillow drop may fail — fine; clear/uninstall still work without Pillow
 ```
@@ -249,8 +249,8 @@ omarchy plugin add https://github.com/AlxWolfenstein97/omahud.git --enable
 
 | Action | What happens |
 |--------|----------------|
-| `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colours keep syncing on every desktop theme flip. |
-| `./uninstall.sh` then disable / remove | Runs `omahud clear` first (restores each modified MangoHud.conf from its own pre-OmaHud colour snapshot — normal after any themed apply), then removes menu, hook, and cache/state. Full wipe / family wipe do the same clear. Only if you never applied (no bak) is there nothing to restore. Quiet Service only restores what was already armed — after wipe that’s nothing until a loud install. Optional TTY y/N for `pkg drop` of packages this install recorded pulling. Hardened contrast / goverlay sync kept — not reverted. |
+| `omarchy plugin disable …` | Shell service stops. **Theme-set hook still runs** — HUD colors keep syncing on every desktop theme flip. |
+| `./uninstall.sh` then disable / remove | Runs `omahud clear` first (restores each modified MangoHud.conf from its own pre-OmaHud color snapshot — normal after any themed apply), then removes menu, hook, and cache/state. Full wipe / family wipe do the same clear. Only if you never applied (no bak) is there nothing to restore. Quiet Service only restores what was already armed — after wipe that’s nothing until a loud install. Optional TTY y/N for `pkg drop` of packages this install recorded pulling. Hardened contrast / goverlay sync kept — not reverted. |
 | `omahud clear` | Restores each modified MangoHud.conf from its own first-apply snapshot (`state/color-backups/…`). Uninstall / full wipe do this automatically when the backup is present. |
 | `omarchy pkg drop python-pillow` | Optional — only if this install recorded pulling it; may fail/stay if something else still requires it. TTY prompts show why + `pacman Required By`. |
 
@@ -269,12 +269,12 @@ MangoHud / Goverlay stay — we never pulled them:
 
 - **No conf yet** — we never pull MangoHud; sync is a no-op until
   `~/.config/MangoHud/MangoHud.conf` exists.
-- **Uninstall / clear / full wipe** — restore per-config colour backups (snapshot taken once per file
+- **Uninstall / clear / full wipe** — restore per-config color backups (snapshot taken once per file
   before the first retint). That is the paint teardown. Only if bak was never
   written (never applied) is there nothing to put back.
 - **Not a MangoHud howto** — 32-bit libs, Steam / Lutris / gamescope / gamemode
   launch chains, etc. are assumed knowledge. See **Goverlay / MangoHud: traps**.
-- **Colour pickers in Goverlay** — don’t use them for theme matching; saving a
+- **Color pickers in Goverlay** — don’t use them for theme matching; saving a
   preset is only an escape hatch until the next sync.
 - **Game-specific confs** — global + Goverlay `gameconfig/*` by default; custom
   paths outside that are on you.
@@ -294,7 +294,7 @@ bash ~/.config/omarchy/plugins/io.github.alxwolfenstein97.omahud/check.sh
 
 - **Layout reference:** [`reference-mangohud-pascube.png`](reference-mangohud-pascube.png)
   — live `mangohud pascube` with the user’s middle-left metrics layout
-  (**Hackerman** colours). Mockups trace that 3-col panel + frametime graph.
+  (**Hackerman** colors). Mockups trace that 3-col panel + frametime graph.
 - Sibling extenders: [OmaOBS](https://github.com/AlxWolfenstein97/omaobs),
   [OmaCursor](https://github.com/AlxWolfenstein97/omacursor),
   [OmaBoot](https://github.com/AlxWolfenstein97/omaboot),

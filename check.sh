@@ -26,7 +26,7 @@ cyan = "#00ffff"
 magenta = "#ff00ff"
 EOF
 
-# layout-heavy conf — colours should change, metrics stay
+# layout-heavy conf — colors should change, metrics stay
 mkdir -p "$tmp/MangoHud" "$tmp/.local/share/goverlay/gameconfig/global"
 cat >"$tmp/MangoHud/MangoHud.conf" <<'EOF'
 legacy_layout=0
@@ -57,7 +57,7 @@ grep -q 'background_color=111111' "$tmp/MangoHud/MangoHud.conf" && pass "bg reti
 grep -q 'gpu_stats' "$tmp/MangoHud/MangoHud.conf" && pass "metrics kept" || bad "metrics kept"
 grep -q 'toggle_hud=Shift_R+F12' "$tmp/MangoHud/MangoHud.conf" && pass "keybind kept" || bad "keybind kept"
 grep -q 'position=top-left' "$tmp/MangoHud/MangoHud.conf" && pass "position kept" || bad "position kept"
-grep -q 'gpu_color=00FF00' "$tmp/MangoHud/MangoHud.conf" && pass "gpu colour" || bad "gpu colour"
+grep -q 'gpu_color=00FF00' "$tmp/MangoHud/MangoHud.conf" && pass "gpu color" || bad "gpu color"
 grep -q 'gpu_color=00FF00' "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf" \
   && pass "goverlay copy retint" || bad "goverlay copy retint"
 grep -q 'gpu_stats' "$tmp/.local/share/goverlay/gameconfig/global/MangoHud.conf" \

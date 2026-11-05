@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Menu, theme-set hook, cache/state. Restores MangoHud colour backup via
+# Menu, theme-set hook, cache/state. Restores MangoHud color backup via
 # `omahud clear` while colors.bak still exists. Optional pkg drop in this TTY
 # (this TTY). Hardened contrast / goverlay sync kept — uninstall does not
-# touch layout or metrics beyond colour restore.
+# touch layout or metrics beyond color restore.
 #
 set -euo pipefail
 
@@ -85,10 +85,10 @@ if command -v omarchy >/dev/null 2>&1; then
   omarchy plugin disable "$plugin_id" >/dev/null 2>&1 || true
 fi
 
-# Restore pre-OmaHud colours while per-config backups still exist (before state wipe).
+# Restore pre-OmaHud colors while per-config backups still exist (before state wipe).
 if [[ -d $state/color-backups ]] || [[ -f $state/colors.bak ]]; then
   "$here/bin/omahud" clear --quiet 2>/dev/null || true
-  note "restored MangoHud colours from per-config backup(s)"
+  note "restored MangoHud colors from per-config backup(s)"
 fi
 
 mkdir -p "$(dirname "$menu_lock")"
@@ -120,8 +120,8 @@ else
   try_pkg_drop "${pkgs_we_pulled[@]}"
 fi
 
-note "done — no omahud menu/hook left; colour backup restored when present"
-note "if colours still look themed: no pre-OmaHud per-config backup existed (paint stays)"
+note "done — no omahud menu/hook left; color backup restored when present"
+note "if colors still look themed: no pre-OmaHud per-config backup existed (paint stays)"
 if (( assume_yes )); then
   note "full wipe (--yes): removing plugin $plugin_id"
   if command -v omarchy >/dev/null 2>&1; then
